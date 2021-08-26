@@ -1,0 +1,1292 @@
+---
+title: "Principal component analysis in GWAS summary statistics"
+author: "Anna Elisabeth Furtjes, King's College London"
+date: "26/08/2021"
+output:
+  html_document:
+    code_folding: show
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+```{r setup, include=F,echo=F}
+require(knitr)
+opts_knit$set(root.dir = "C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/")
+knitr::opts_chunk$set(echo = TRUE, fig.align="center")
+```
+
+# **Background and reasoning**
+
+**Available data:**
+In the following analysis, we use freely available genome-wide association study (GWAS) summary statistics from [Linner et al. (2019)](https://doi.org/10.1038/s41588-018-0309-3) on risky behaviors . In this study, the authors performed GWAS on the propensity to speeding, alcohol consumption, smoking, and the number of self-reported sexual partners. In addition to the four traits, they extracted the first principal component (PC) of these four traits in a principal component analysis (PCA), and performed a GWAS on this first PC to create a summary of overall risky behaviors. The summary statistics are available on https://www.thessgac.org/data .
+
+_The GWAS summary statistics for ever smoking status were derived from UKB as well as TAG, whereas all the others (including the PC sumstats) were obtained from UKB only._
+
+**Aim of the analysis:**
+Using Linner's summary statistics of speeding, drinking, smoking and sexual partners, we will perform linkage disequilibirum score regression (LDSC) and obtain the genetic correlation matrix from the four risky behaviors in Linner et al. (2019). Using PCA, we will extract the first PC from this genetic correlation matrix. Resulting standardised PC loadings will be used to weight SNP effects (z-scores) contributed by the four risky behaviors. We have modified the R package provided by [Baselman et al. (2019)](https://www.ncbi.nlm.nih.gov/pubmed/30643256) to create our genetic PC sumstats while allowing to correct for sample overlap. 
+
+**Validation of the resulting genetic PC sumstats:**
+
+To validate the results, we will compare SNP effects from Linner's phenotypic PC GWAS with effect sizes extracted in our analysis. A perfect correlation between our genetic PC sumstats that we created using summary statistics only (called *genetic PCA* in this document) and the PC sumstats would indicate that we captured the same effects as Linner et al. obtained in their PCA with *phenotypic* data.
+Validating the resulting genetic PC sumstats serves as a sanity check and is crucial as, to our knowledge, this kind of approach is unprecedented.
+
+
+# Obtain genetic correlation matrix
+
+After downloading the summary statistics, we use the genomic SEM package in R to pre-process and munge the files ([Grotzinger et al., 2019](https://www.nature.com/articles/s41562-019-0566-x)). We perform LDSC to obtain a genetic correlation matrix. 
+
+## Step 1: Prepare and munge files
+
+```{r prepare_data, eval=FALSE,echo=TRUE}
+library(data.table)
+library(devtools)
+library(GenomicSEM)
+library(knitr)
+library(psych)
+# set work directory to where raw GWAS are stored
+setwd(paste0(getwd(),"/GWAS_raw"))
+
+# list all files in this directory, only first four are the risky behaviors
+gwas_files<-list.files()
+gwas_files<-gwas_files[1:4]
+
+#load all files listed in gwas_files
+for (i in 1:length(gwas_files)) assign(gwas_files[i],fread(gwas_files[i],header=T,data.table=F))
+
+# double check which files were loaded in 
+ls(pattern=".txt")
+
+# change column names &
+# set wd to the directory the files with the new names should be saved
+setwd(paste0(getwd(),"/GWAS_header"))
+
+for(i in gwas_files){
+file<-get(i)
+print(dim(file))
+print(head(file))
+names(file)<-c("SNP","CHR","POS","A1","A2","eaf_A1","beta","se","p")
+print(head(file))
+fwrite(file,file=i, quote=FALSE,col.names=TRUE,row.names=F,sep=" ")
+}
+
+#################
+## munge
+#################
+files<-gwas_files
+
+# as reference SNP list use 1000G reference genome (HapMap 3)
+# wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2
+hm3<-"w_hm3.noMHC.snplist.txt"
+
+trait.names<-c("speeding","drinking","smoking","sexual_partners")
+
+N<-c(404291,414343,518633,370711)
+
+munge(files=files,
+      hm3=hm3,
+      trait.names = trait.names,
+      N=N)
+```
+
+## Step 2: Perform linkage disequilibrium score regression (LDSC)
+```{r ldsc, eval=FALSE,echo=TRUE}
+# download and unpack SNP weights: 
+# wget https://data.broadinstitute.org/alkesgroup/LDSCORE/eur_w_ld_chr.tar.bz2
+# tar -jxvf eur_w_ld_chr.tar.bz2
+# download software to unzip .tar document on windows
+##############################################################
+# setwd to munged files
+setwd(paste0(getwd(),"/GWAS_munged"))
+
+library(stringr)
+
+# specifications for ldsc function
+traits<-c("speeding.sumstats.gz","drinking.sumstats.gz","smoking.sumstats.gz","sexual_partners.sumstats.gz")
+ld<- "eur_w_ld_chr/"
+wld<- "eur_w_ld_chr/"
+trait.names<-str_remove(traits, pattern = ".sumstats.gz")
+sample.prev<-c(NA,NA,.59,NA)
+
+# https://bmjopen.bmj.com/content/4/12/e005663 
+# this paper says that 50% of population had never smoked (but they use UKB ...?)
+# difficult to find papers on ever smoked rather than regular smokers
+population.prev<-c(NA,NA,.5,NA)
+
+LDSCoutput_risk_taking<-ldsc(traits=traits,
+                             sample.prev=sample.prev,
+                             population.prev=population.prev,
+                             ld=ld,wld=wld,
+                             trait.names = trait.names,
+                             stand = T)
+
+#LDSCoutput_risk_taking$S is going to be the covariance matrix
+#LDSCoutput_risk_taking$V is the sampling covariance matrix as expected by Lavaan
+save(LDSCoutput_risk_taking, file="risk_taking_stand.RData")
+
+```
+
+## Step 3: Display genetic correlation matrix
+
+```{r heatmap, echo=FALSE, warning=FALSE,fig.height=4.5}
+library(stringr)
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/data"))
+
+load("risk_taking_stand.RData")
+
+cormatrix<-LDSCoutput_risk_taking$S_Stand
+
+# create covariance matrix in ggplot
+
+# get lower triangle of matrix
+get_lower_tri<-function(cormatrix){
+  cormatrix[upper.tri(cormatrix)] <- NA
+  return(cormatrix)
+}
+lower_triangle<-get_lower_tri(cormatrix)
+
+#melt to plot
+row.names(lower_triangle)<-c("speeding","drinking","smoking","sexual_partners")
+library(reshape2)
+lower_triangle<-melt(lower_triangle)
+lower_triangle$value <- round(lower_triangle$value, digits = 2)
+
+library(ggplot2)
+heatmap<-
+  ggplot(data=lower_triangle, aes(Var1,Var2,fill=value))+
+      geom_tile(color = "white")+
+      theme_minimal()+ 
+      theme_bw()+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.title.x=element_blank(),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.border = element_blank(),
+            axis.ticks = element_blank(),
+            legend.justification = c(1,0),
+            #legend.position = c(0.45,0.7),
+            legend.direction = "horizontal")+  
+      scale_fill_gradient2(low="lightblue1",high="navyblue",mid ="steelblue2",
+                            midpoint=0,limit=c(-1,1),na.value="white",
+                           name="Genetic\ncorrelation")+
+      guides(fill=guide_colorbar(barwidth = 7,barheight = 1,title.position = "top",title.hjust = 0.5))+
+      coord_fixed()
+
+heatmap+
+  geom_text(aes(Var1,Var2,label=value),color="black",size=4)
+```
+
+### **Sanity check:** 
+
+To validate our correlation matrix, we contacted Linner et al. (2019) who shared their LDSC results:
+They found very similar genetic correlations between the four risky behaviors using LDSC and we suggest that our pre-processing was successful.
+
+```{r Linners_rg,echo=FALSE, warning=FALSE,fig.height=4.5}
+# get Linners data and store in lower matrix
+Linners_rg<-lower_triangle
+Linners_rg$value[which(Linners_rg$Var1=="drinking" & Linners_rg$Var2=="speeding")]<-0.2904
+Linners_rg$value[which(Linners_rg$Var1=="smoking" & Linners_rg$Var2=="speeding")]<-0.1432
+Linners_rg$value[which(Linners_rg$Var1=="sexual_partners" & Linners_rg$Var2=="speeding")]<-0.2948
+Linners_rg$value[which(Linners_rg$Var1=="smoking" & Linners_rg$Var2=="drinking")]<-0.3572
+Linners_rg$value[which(Linners_rg$Var1=="sexual_partners" & Linners_rg$Var2=="drinking")]<-0.3214
+Linners_rg$value[which(Linners_rg$Var1=="sexual_partners" & Linners_rg$Var2=="smoking")]<-0.5363
+
+Linners_rg$value<-round(Linners_rg$value,digits = 2)
+
+Linners_map<-
+  ggplot(data=Linners_rg, aes(Var1,Var2,fill=value))+
+      geom_tile(color = "white")+
+      theme_minimal()+ 
+      theme_bw()+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.title.x=element_blank(),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.border = element_blank(),
+            axis.ticks = element_blank(),
+            legend.justification = c(1,0),
+            #legend.position = c(0.45,0.7),
+            legend.direction = "horizontal")+  
+      scale_fill_gradient2(low="lightblue1",high="navyblue",mid ="steelblue2",
+                            midpoint=0,limit=c(-1,1),na.value="white",
+                           name="Genetic\ncorrelation")+
+      guides(fill=guide_colorbar(barwidth = 7,barheight = 1,title.position = "top",title.hjust = 0.5))+
+      coord_fixed()
+
+Linners_map+
+  geom_text(aes(Var1,Var2,label=value),color="black",size=4)
+
+```
+
+## LDSC intercepts
+
+LDSC intercepts quantify sample overlap and other confounding factors (such as phenotypic correlation and population stratification) between the four risky behaviors we are analysing here.
+
+```{r heatmap_intercept_four_traits, echo=FALSE, warning=FALSE,fig.height=4.5}
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/data"))
+
+load("risk_taking_stand.RData")
+
+intercepts<-data.matrix(round(LDSCoutput_risk_taking$I,digits = 2))
+colnames(intercepts)<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+rownames(intercepts)<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+
+# create covariance matrix in ggplot
+
+# get lower triangle of matrix
+lower_triangle<-get_lower_tri(intercepts)
+
+#melt to plot
+library(reshape2)
+lower_triangle<-melt(lower_triangle,id.vars = c("Var1","Var2"))
+
+lower_triangle<-as.data.frame(lower_triangle)
+lower_triangle$corrected<-with(lower_triangle, ifelse(value==1.01,1.00,value))
+
+library(ggplot2)
+heatmap<-
+  ggplot(data=lower_triangle, aes(Var1,Var2,fill=corrected))+
+      geom_tile(color = "white")+
+      theme_minimal()+ 
+      theme_bw()+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.title.x=element_blank(),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.border = element_blank(),
+            axis.ticks = element_blank(),
+            legend.justification = c(1,0),
+            #legend.position = c(0.45,0.7),
+            legend.direction = "horizontal")+  
+      scale_fill_gradient2(low="gold4",high="darkorange3",mid ="gold",
+                            midpoint=0,limit=c(-1,1),na.value="white",
+                           name="LDSC intercepts")+
+      guides(fill=guide_colorbar(barwidth = 7,barheight = 1,title.position = "top",title.hjust = 0.5))+
+      coord_fixed()
+
+heatmap+
+  geom_text(aes(Var1,Var2,label=value),color="black",size=4)
+```
+
+
+
+<br>
+
+***
+
+# **Principal Component Analysis**
+## Eigen decomposition
+
+We perform eigen decomposition on the __correlation matrix__ using the `eigen` function. We aim to obtain standardised loadings of the four risky behaviors on the first PC, by standardising the eigenvectors of the first PC with their corresponding eigenvalue.
+
+
+### Eigenvectors
+```{r eigenvectors}
+#extract eigenvectors and eigenvalues
+eigenvectors<-round(eigen(cormatrix)$vectors,digits=3)
+```
+```{r create_function_to_display_matrix,include=FALSE,fid.cap="Eigenvectors",fig.pos="H"}
+write_matrix <- function(x) {
+  begin <- "$$\\begin{bmatrix}"
+  end <- "\\end{bmatrix}$$"
+  X <-
+    apply(x, 1, function(x) {
+      paste(
+        paste(x, collapse = "&"),
+        "\\\\"
+      )
+    })
+  writeLines(c(begin, X, end))
+}
+```
+```{r print_eigenvectors, results="asis",echo=FALSE}
+write_matrix(eigenvectors)
+```
+
+
+### Eigenvalues and explained variance
+```{r eigenvalues,message=FALSE,warning=FALSE,message=FALSE}
+eigenvalues<-round(eigen(cormatrix)$values,digits = 3)
+explained_variance<-round(eigenvalues/sum(eigenvalues)*100,digits = 3)
+library(knitr)
+values<-cbind(c("1st PC","2nd PC","3rd PC","4th PC"),eigenvalues,explained_variance)
+kable(values, caption="Eigenvalues and explained variance (%)", col.names = c("PC","Eigenvalues","Explained variance"))
+```
+
+### Standardised loadings
+
+We standardise the eigenvectors with the eigenvalues, in order to obtain standardised PC loadings.
+
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/standardise_loadings.PNG){ width=40% }
+
+
+
+The PC loadings from our genetic __correlation__ matrix are:
+```{r print_loadings, results="asis",echo=FALSE}
+matrix_print<-round(eigenvectors%*%sqrt(diag(eigenvalues)),digits=3)
+write_matrix(matrix_print)
+```
+
+
+
+<br>
+<br>
+
+
+***
+
+
+# **Create genetic PC sumstats** 
+
+We format the files as expected by the `multivariate_GWAMA()` function by Baselman et al. (2019). It expects exactly nine columns (SNPID,CHR,BP,EA,OA,EAF,N,Z,P) and that effect sizes must be z scores. We modified the function from Baselman et al. as displayed below in order to create our genetic PC sumstats.
+
+## Step 1: Format the risky behaviors sumstats
+
+```{r format_GWAMA, eval=FALSE,echo=TRUE}
+source("https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE")
+library(data.table)
+setwd(paste0(getwd(),"/GWAS_header"))
+
+# read in gwas files
+gwas_files<-list.files()
+gwas_files<-gwas_files[1:4]
+
+for (i in 1:length(gwas_files)) assign(gwas_files[i],fread(gwas_files[i],header=T,data.table=F))
+ls(pattern=".txt")
+
+# generate N column
+AUTOMOBILE_SPEEDING_PROPENSITY_GWAS.txt$N<-404291
+DRINKS_PER_WEEK_GWAS.txt$N<-414343
+EVER_SMOKER_GWAS_MA_UKB_TAG.txt$N<-518633
+NUMBER_SEXUAL_PARTNERS_GWAS.txt$N<-370711
+  
+# the following loop does:
+# restrict file to HapMap SNPs contained in munged GWAS (but make sure EAF taken from reference file is correct by comparing EA in ref and munged files)
+# transform beta into z-scores
+# z-score=beta/stand_error # https://www.biostars.org/p/140292/
+# re-name columns and include only the 9 columns needed by the function
+
+# list reference files that contain info on BP, CHR and P (that the munged files don't contain)
+setwd(paste0(getwd(),"/GWAS_header"))
+ref_files<-list.files()[1:4]
+
+all_files <- data.frame(ref_files, munged_files = c("speeding.sumstats.gz","drinking.sumstats.gz","smoking.sumstats.gz","sexual_partners.sumstats.gz"))
+
+
+for(i in 1:nrow(all_files)){
+  # read in munged file
+  setwd(paste0(getwd(),"/GWAS_munged"))
+  munged_file<-fread(as.character(all_files$munged_files[i]),header=T,data.table=F)
+  
+  # read in ref file
+  setwd(paste0(getwd(),"/GWAS_header"))
+  ref_file<-fread(as.character(all_files$ref_files[i]),header=T,data.table=F)
+  
+  # format ref file
+    names(ref_file)[which(names(ref_file)=="POS")]<-"BP"
+    names(ref_file)[which(names(ref_file)=="eaf_A1")]<-"EAF_A1_prelim"
+    names(ref_file)[which(names(ref_file)=="p")]<-"P"
+    # A1 is the effect allele according to Linner website
+    names(ref_file)[which(names(ref_file)=="A1")]<-"EA"
+    names(ref_file)[which(names(ref_file)=="A2")]<-"OA"
+
+    
+  # only keep relevant columns from the reference file
+  ref_file<-ref_file[,c("BP","CHR","SNP","P","EA","EAF_A1_prelim")]
+  
+  # merge munged and ref file
+  merged_file<-merge(munged_file, ref_file, by=c("SNP"), all.x=T)
+  
+  # create an effect allele frequency column that matches the allele used in the munged file (because we take the frequency from the reference file that might have flipped effect and other alleles)
+    merged_file$EAF<-ifelse(merged_file$A1 == merged_file$EA, merged_file$EAF_A1_prelim, 1-merged_file$EAF_A1_prelim)
+    
+    # only keep required columns
+    names(merged_file)[which(names(merged_file) == "SNP")]<-"SNPID"
+    merged_file<-merged_file[,c("SNPID","CHR","BP","A1","A2","EAF","N","Z","P")]
+    
+    # name according to GWAMA expectations
+    # In genomicSEM A1 is the effect allele
+    names(merged_file)[which(names(merged_file) == "A1")]<-"EA"
+    names(merged_file)[which(names(merged_file) == "A2")]<-"OA"
+    
+    # save formatted files
+    setwd(paste0(getwd(),"/GWAMA_format"))
+
+    ref_trait <- as.character(all_files$ref_files[i])
+    fwrite(merged_file,file=paste0("gwama_",ref_trait), quote=FALSE,col.names=TRUE,row.names=F,sep=" ",na="NA")
+}
+
+```
+
+
+## Step 2: Modify GWAMA function
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/Baselman_equation.PNG){ width=45% }
+
+Baselman et al. (2019) implemeted the equation above. We replace the weights in their equation, the square root of N times the heritability, with standardised PC loadings times the square root of N: 
+
+Change `w = sqrt(N*h2)`to `w = sqrt(N)*standardised_loadings` 
+
+If we only replace heritabilities with standardised loadings in the arguments of the function, we will get errors for two reasons:
+
+ 1) It won't allow negative loadings (because we are replacing h2 with potentially negative PC loadings and negative heritability wouldn't make sense)
+
+ 2) It won't allow to calculate our weights, as there is no sqrt() of a negative value: `sqrt(-number)=NaN`
+    
+I have made the following changes to address these problems:
+
+### 1) Disable sanity check for negative heritabilites:
+```{r sanity_check, eval=FALSE,echo=TRUE}
+source("https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE")
+my_GWAMA<-multivariate_GWAMA
+trace(my_GWAMA,edit=T)
+```
+I deleted _lines 217-221_, which disables the sanity check to stop the function from running when loadings are not in the expected h2 format (h2<0 & h2>1).
+
+### 2) Modify code to calculate our weights
+**Original code:**
+```{r original_code, eval=F,echo=T}
+# line 663
+W<-t(t(N) * h2)
+# line 665
+sqrt_W<-sqrt(W)
+```
+_As we replace h2 with negative loadings, this code produces NaNs._
+
+
+**Modified code:**
+```{r modified_code, eval=F,echo=T}
+w = t(t(sqrt(N))*h2)
+sqrt_W<-w
+```
+
+
+## Step 3: Run modified function
+```{r calculate_GWAMA, eval=F,echo=T}
+# load dependencies
+source("https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE")
+library(data.table)
+library(stringr)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/scripts"))
+source("my_GWAMA_26032020.R")
+
+
+# Make an empty list with length equal to the number of input files
+dat<-vector("list")
+
+setwd(paste0(getwd(),"/GWAMA_format"))
+gwama_files<-list.files(pattern = "gwama_")
+all_files<-as.data.frame(cbind(gwama_files, file_names = c("speeding","drinking","smoking","sexual_partners")))
+  
+# Read in the data 
+n<-0
+for(file in 1:nrow(all_files)){
+  n<-n+1
+  print(n)
+  dat[[all_files$file_names[n]]]<-fread(all_files$gwama_files[n],data.table = F)
+}
+
+# load covariance matrix from LDSC
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/data"))
+load("risk_taking_stand.RData")
+
+# select the matrix of LDSC intercepts 
+# this matrix should be in the same order as data read into dat but I have added some code to specifically make sure they take the same order
+order<-names(dat)
+dimnames(LDSCoutput_risk_taking$I)[[1]]<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+dimnames(LDSCoutput_risk_taking$I)[[2]]<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+CTI<-as.matrix(LDSCoutput_risk_taking$I[order,order])
+
+# load correlation matrix
+dimnames(LDSCoutput_risk_taking$S_Stand)[[1]]<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+dimnames(LDSCoutput_risk_taking$S_Stand)[[2]]<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+cormatrix<-LDSCoutput_risk_taking$S_Stand[order,order]
+
+# eigen decomposition
+eigenvectors<-eigen(cormatrix)$vectors
+eigenvalues<-eigen(cormatrix)$values
+
+# calculate standardised loadings
+loadings<-as.vector(eigenvectors%*%sqrt(diag(eigenvalues))[,1])
+
+# run my modified GWAMA function
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+
+my_GWAMA(x=dat,
+          cov_Z=CTI,
+          h2=loadings,
+          out=".",
+          name="my_GWAMA_weights_26082021",
+          output_gz=F,
+          check_columns=F)
+```
+
+Running the function can take a while. It will create one file containing the genetic PC summary stats and a log file to keep track of operations.
+
+For example, the log file shows the number of total and significant SNPs:
+
+  1) "2,529 SNPs reached genome-wide significance (Minimum P-value: 9.4467e-41)"
+  
+  2) "Successfully created summary statistics for 1,198,974 SNPs"
+
+*The function does not test for significance. It only counts the number of SNP's below a certain p-value threshold. The default threshold used here is `p < 5e-08`, but can be changed by the user.*
+
+<br>
+
+<br>
+
+
+*** 
+
+
+# Evaluate our genetic PC sumstats
+
+We chose to evaluate our genetic PC summary statistics using data from Linner et al. (2019) because they provide GWAS on a first phenotypic PC derived from the four GWAS phenotypes. We use their phenotypic PC sumstats as a reference for how well our genetic PC represents a summary of SNP effects contributed by the four risky behaviors: speeding, drinking, smoking and sexual partners. 
+If our genetic PC summary statistics highly correlate with the phenotypic PC sumstats by Linner, we can be confident that our genetic PC extracted purely based on GWAS sumstats is capturing the same SNP effects as GWAS sumstats calculated for a phenotypic PC.
+
+We will perform genetic correlations between our genetic PC sumstats, the phenotypic PC sumstats and the four risky behaviors summary stats. We will also plot z statistics contained in our genetic PC sumstats against those contained in the other summary statistics and calculate their correlations.  
+
+It is important to note that the directions indicated by the PC loadings are arbitrary and it would not change the signal contained in the statistics if we flipped the signs of the loadings as long as this is done consistently across all PC loadings. If negative PC loadings are obtained, one can weight the SNPs with negative PC loadings, but we suggest to scale the SNP effects in the most sensible direction to make results more intuitively interpretable. 
+
+
+## Prepare and munge sumstats for LDSC
+```{r munge_GWAMA,eval=F,echo=T}
+# set work directory to where raw GWAS are stored
+setwd(paste0(getwd(),"/GWAS_raw"))
+
+# store file name in gwas_file
+gwas_file<-list.files(pattern="RISK_PC")
+
+# load into R
+Risk_PC<-fread(gwas_file,header=T,data.table = F)
+
+# rename columns
+names(Risk_PC)<-c("SNP","CHR","POS","A1","A2","eaf_A1","beta","se","p")
+
+# and set wd to the directory I want to save the files with the new names
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+
+# write table 
+fwrite(Risk_PC,file="Risk_PC_GWAS.txt", quote=FALSE,col.names=TRUE,row.names=F,sep=" ")
+
+
+# prepare GWAMA file #
+# set work directory to where GWAMA file is stored
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+# store file name in gwas_file
+gwas_file<-list.files(pattern="weighted_GWAMA.results.txt")
+# load into R
+GWAMA<-fread(gwas_file,header=T,data.table = F)
+# rename columns (rename N_eff into N so that GenomicSEM recognises it as N column)
+names(GWAMA)[which(names(GWAMA)=="N_eff")]<-"N"
+GWAMA<-GWAMA[,c("SNPID","CHR","BP","EA","OA","EAF","MAF","N","BETA","SE","Z","p")]
+
+# setwd to where you want to save GWAMA
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+# write table 
+fwrite(GWAMA,file="GWAMA_header.txt", quote=FALSE,col.names=TRUE,row.names=F,sep=" ",na="NA")
+
+# munge PC and GWAMA files ##
+
+#load dependencies for genomic SEM
+library(devtools)
+library(GenomicSEM)
+
+files<-c("Risk_PC_GWAS.txt","GWAMA_header.txt")
+
+# use 1000G reference genome (HapMap 3)
+# wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2
+hm3<-paste0(getwd(),"/GWAS_header/w_hm3.noMHC.snplist.txt")
+
+trait.names<-c("Risk_PC","GWAMA")
+
+N<-c(315894,NA)
+
+munge(files=files,
+      hm3=hm3,
+      trait.names = trait.names,
+      N=N)
+```
+
+## Perform LDSC 
+
+```{r LDSC_GWAMA,eval=F,echo=T}
+setwd(paste0(getwd(),"/GWAS_munged"))
+
+traits<-c("speeding.sumstats.gz","drinking.sumstats.gz","smoking.sumstats.gz","sexual_partners.sumstats.gz",paste0(getwd(),"/Evaluate_GWAMA/Risk_PC.sumstats.gz"),paste0(getwd(),"/Evaluate_GWAMA/GenomicPCA.sumstats.gz"))
+
+ld<- "eur_w_ld_chr/"
+wld<- "eur_w_ld_chr/"
+trait.names<-c("speeding","drinking","smoking","sexual_partners","phenotypicPC","genomicPC")
+sample.prev<-c(NA,NA,.59,NA,NA,NA)
+population.prev<-c(NA,NA,.5,NA,NA,NA)
+
+LDSCoutput_evaluate_GWAMA<-ldsc(traits=traits,
+								 sample.prev=sample.prev,
+								 population.prev=population.prev,
+								 ld=ld,wld=wld,
+								 trait.names = trait.names, stand = T)
+
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+save(LDSCoutput_evaluate_GWAMA, file="Evaluate_GWAMA.RData")
+```
+
+
+### Display genetic correlations
+
+```{r heatmap_GWAMA,echo=FALSE, warning=FALSE,fig.height=4.5}
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/data"))
+load("Evaluate_GWAMA.RData")
+dimnames(LDSCoutput_evaluate_GWAMA$S_Stand)[[1]]<-dimnames(LDSCoutput_evaluate_GWAMA$S)[[2]]
+dimnames(LDSCoutput_evaluate_GWAMA$S_Stand)[[2]]<-dimnames(LDSCoutput_evaluate_GWAMA$S)[[2]]
+
+cormatrixGWAMA<-LDSCoutput_evaluate_GWAMA$S_Stand
+
+# get lower triangle (function defined above)
+lower_triangle<-get_lower_tri(cormatrixGWAMA)
+
+lower_triangle<-reshape2::melt(lower_triangle)
+lower_triangle$value<-round(lower_triangle$value, digits = 2)
+
+library(ggplot2)
+heatmap<-
+  ggplot(data=lower_triangle, aes(Var1,Var2,fill=value))+
+      geom_tile(color = "white")+
+      theme_minimal()+ 
+      theme_bw()+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.title.x=element_blank(),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.border = element_blank(),
+            axis.ticks = element_blank(),
+            legend.justification = c(1,0),
+            #legend.position = c(0.45,0.7),
+            legend.direction = "horizontal")+  
+      scale_fill_gradient2(low="lightpink",high="red4",mid ="indianred1",
+                            midpoint=0,limit=c(-1,1),na.value="white",
+                           name="Genetic\ncorrelation")+
+      guides(fill=guide_colorbar(barwidth = 7,barheight = 1,title.position = "top",title.hjust = 0.5))+
+      coord_fixed()
+
+heatmap+
+  geom_text(aes(Var1,Var2,label=value),color="black",size=4)
+```
+
+
+*Note the strong genetic correlation between our genomic PCA sumstats and the phenotypic PC sumstats. It suggests that we extract the same SNP effects from GWAS summary statistics only as was captured by Linner when extracting a phenotypic PC and calculating GWAS sumstats for it.* 
+
+
+## Display the LDSC intercepts 
+
+LDSC intercepts capture sample overlap, among other confounding factors. We would expect traits compared with themselves to have a perfect sample overlap (1 or very close to 1). When comparing our genetic PC sumstats with the four risky behaviors sumstats, we expect substantial sample overlap as all four have contributed to our genetic PC. In theory, our genetic PC and the phenotypic PC by Linner capture the same signal, we expect an even stronger sample overlap between these two traits. 
+
+```{r intercept_matrix_all}
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/data"))
+load("Evaluate_GWAMA.RData")
+
+dimnames(LDSCoutput_evaluate_GWAMA$I)[[1]]<-dimnames(LDSCoutput_evaluate_GWAMA$S)[[2]]
+dimnames(LDSCoutput_evaluate_GWAMA$I)[[2]]<-dimnames(LDSCoutput_evaluate_GWAMA$S)[[2]]
+
+intercepts<-data.matrix(round(LDSCoutput_evaluate_GWAMA$I,digits = 2))
+
+```
+```{r heatmap_intercepts, echo=FALSE, warning=FALSE,fig.height=4.5}
+# create covariance matrix in ggplot
+
+# get lower triangle of matrix
+lower_triangle<-get_lower_tri(intercepts)
+
+#melt to plot
+lower_triangle<-reshape2::melt(lower_triangle,id.vars = c("Var1","Var2"))
+
+lower_triangle<-as.data.frame(lower_triangle)
+lower_triangle$corrected<-with(lower_triangle, ifelse(value==1.01,1.00,value))
+
+library(ggplot2)
+heatmap<-
+  ggplot(data=lower_triangle, aes(Var1,Var2,fill=corrected))+
+      geom_tile(color = "white")+
+      theme_minimal()+ 
+      theme_bw()+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.title.x=element_blank(),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.border = element_blank(),
+            axis.ticks = element_blank(),
+            legend.justification = c(1,0),
+            #legend.position = c(0.45,0.7),
+            legend.direction = "horizontal")+  
+      scale_fill_gradient2(low="gold4",high="darkorange3",mid ="gold",
+                            midpoint=0,limit=c(-1,1),na.value="white",
+                           name="LDSC intercepts")+
+      guides(fill=guide_colorbar(barwidth = 7,barheight = 1,title.position = "top",title.hjust = 0.5))+
+      coord_fixed()
+
+heatmap+
+  geom_text(aes(Var1,Var2,label=value),color="black",size=4)
+```
+
+
+
+# Comparison of our genetic PC sumstats with other traits
+
+In the following plots, the blue line indicates the central correlation line and the red line is the line of identity with an intercept of 1 and a slope of -1: `x=y`. 
+
+## Our genetic PC sumstats vs. Linner's phenotypic PC sumstats
+
+```{r PC_plot,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = ls())
+library(data.table)
+library(ggplot2)
+
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+phenoPC<-fread("Risk_PC.sumstats.gz", header=T,data.table = F)
+names(phenoPC)[2:ncol(phenoPC)]<-paste0("phenoPC_",names(phenoPC))[2:ncol(phenoPC)]
+
+genoPC<-fread("GenomicPCA.sumstats.gz",header=T,data.table = F)
+names(genoPC)[2:ncol(genoPC)]<-paste0("genoPC_",names(genoPC))[2:ncol(genoPC)]
+
+both<-merge(genoPC, phenoPC, by = "SNP")
+
+PC_plot<-ggplot(both, aes(x=phenoPC_Z, y=genoPC_Z)) + 
+                    geom_point(color="deepskyblue",alpha=0.4) + 
+                    ggtitle("Phenotypic PC sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "Phenotypic PC sumstats Z scores")+
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("pheno_vs_genoPC.png", width = 7, height = 6, units = "in", res = 500)
+PC_plot
+dev.off()
+```
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/pheno_vs_genoPC.png)
+
+
+## Our genetic PC sumstats vs. speeding sumstats
+```{r speeding_plot,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = setdiff(ls(), "genoPC"))
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/GWAS_munged"))
+speeding<-fread("speeding.sumstats.gz", header=T,data.table = F)
+names(speeding)[2:ncol(speeding)]<-paste0("speeding_",names(speeding))[2:ncol(speeding)]
+
+both<-merge(genoPC, speeding, by = "SNP")
+
+speeding_plot<-ggplot(both, aes(x=speeding_Z, y=genoPC_Z)) + 
+                    geom_point(color="deepskyblue",alpha=0.4) + 
+                    ggtitle("Speeding sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "Speeding sumstats Z scores")+
+                    #, limits = c(5, 15), breaks = seq(5, 15, 2)) 
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    #, limits = c(5,15), breaks = seq(5, 15, 2)) + 
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("speeding_vs_genoPC.png", width = 7, height = 6, units = "in", res = 500)
+speeding_plot
+dev.off()
+```
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/speeding_vs_genoPC.png)
+
+
+## Our genetic PC sumstats vs. drinking sumstats
+```{r PC_drinking,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = setdiff(ls(), "genoPC"))
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/GWAS_munged"))
+drinking<-fread("drinking.sumstats.gz", header=T,data.table = F)
+names(drinking)[2:ncol(drinking)]<-paste0("drinking_",names(drinking))[2:ncol(drinking)]
+
+both<-merge(genoPC, drinking, by = "SNP")
+
+drinking_plot<-ggplot(both, aes(x=drinking_Z, y=genoPC_Z)) + 
+                    geom_point(color="deepskyblue",alpha=0.4) + 
+                    ggtitle("Drinking sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "Drinking sumstats Z scores")+
+                    #, limits = c(5, 15), breaks = seq(5, 15, 2)) 
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    #, limits = c(5,15), breaks = seq(5, 15, 2)) + 
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("drinking_vs_genoPC.png", width = 7, height = 6, units = "in", res = 500)
+drinking_plot
+dev.off()
+```
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/drinking_vs_genoPC.png)
+
+
+## Our genetic PC sumstats vs. smoking sumstats
+
+```{r scatter_smoking,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = setdiff(ls(), "genoPC"))
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/GWAS_munged"))
+smoking<-fread("smoking.sumstats.gz", header=T,data.table = F)
+names(smoking)[2:ncol(smoking)]<-paste0("smoking_",names(smoking))[2:ncol(smoking)]
+
+both<-merge(genoPC, smoking, by = "SNP")
+
+smoking_plot<-ggplot(both, aes(x=smoking_Z, y=genoPC_Z)) + 
+                    geom_point(color="deepskyblue",alpha=0.4) + 
+                    ggtitle("smoking sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "smoking sumstats Z scores")+
+                    #, limits = c(5, 15), breaks = seq(5, 15, 2)) 
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    #, limits = c(5,15), breaks = seq(5, 15, 2)) + 
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("smoking_vs_genoPC.png", width = 7, height = 6, units = "in", res = 500)
+smoking_plot
+dev.off()
+```
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/smoking_vs_genoPC.png)
+
+
+
+## Our genetic PC sumstats vs. sexual partners sumstats
+
+```{r scatter_sexual,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = setdiff(ls(), "genoPC"))
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/GWAS_munged"))
+sexual<-fread("sexual_partners.sumstats.gz", header=T,data.table = F)
+names(sexual)[2:ncol(sexual)]<-paste0("sexual_",names(sexual))[2:ncol(sexual)]
+
+both<-merge(genoPC, sexual, by = "SNP")
+
+sexual_plot<-ggplot(both, aes(x=sexual_Z, y=genoPC_Z)) + 
+                    geom_point(color="deepskyblue",alpha=0.4) + 
+                    ggtitle("Sexual partners sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "Sexual partners sumstats Z scores")+
+                    #, limits = c(5, 15), breaks = seq(5, 15, 2)) 
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    #, limits = c(5,15), breaks = seq(5, 15, 2)) + 
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("sexual_vs_genoPC.png", width = 7, height = 6, units = "in", res = 500)
+sexual_plot
+dev.off()
+```
+
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/sexual_vs_genoPC.png)
+
+
+<br>
+
+<br>
+
+
+***
+
+
+# Genetic PC sumstats extracted from covariance matrix 
+
+For comparison, we also calculated genetic PC sumstats using a covariance matrix obtained through LDSC, instead of a correlation matrix. We run the same code as displayed above (Step 3: Run GWAMA with modified function), but replacing the standardised genetic correlation matrix with the unstandardised matrix.
+
+
+```{r recalculate_GWAMA, eval=F,echo=T}
+# load dependencies
+source("https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE")
+library(data.table)
+library(stringr)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/scripts"))
+source("my_GWAMA_26032020.R")
+
+
+# Make an empty list with length equal to the number of input files
+dat<-vector("list")
+
+
+setwd(paste0(getwd(),"/GWAMA_format"))
+gwama_files<-list.files(pattern = "gwama_")
+all_files<-as.data.frame(cbind(gwama_files, file_names = c("speeding","drinking","smoking","sexual_partners")))
+  
+# Read in the data 
+n<-0
+for(file in 1:nrow(all_files)){
+  n<-n+1
+  print(n)
+  dat[[all_files$file_names[n]]]<-fread(all_files$gwama_files[n],data.table = F)
+}
+
+# load covariance matrix from LDSC
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/data"))
+load("risk_taking_stand.RData")
+
+# select the matrix of LDSC intercepts 
+# this matrix should be in the same order as data read into dat but I have added some code to specifically make sure they take the same order
+order<-names(dat)
+dimnames(LDSCoutput_risk_taking$I)[[1]]<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+dimnames(LDSCoutput_risk_taking$I)[[2]]<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+CTI<-as.matrix(LDSCoutput_risk_taking$I[order,order])
+
+# load correlation matrix
+dimnames(LDSCoutput_risk_taking$S)[[1]]<-dimnames(LDSCoutput_risk_taking$S)[[2]]
+covmatrix<-LDSCoutput_risk_taking$S[order,order]
+
+# eigen decomposition
+eigenvectors<-eigen(covmatrix)$vectors
+eigenvalues<-eigen(covmatrix)$values
+
+# calculate standardised loadings
+loadings<-as.vector(eigenvectors%*%sqrt(diag(eigenvalues))[,1])
+
+    # multiply the loadings with -1 if the median value of the loadings is below 0
+    # this achieves a more intuitive interpretation but doesn't change the results - the signal is the same even when we multiple it with -1
+    median_loadings<-median(loadings)
+    mean_direction<-sign(median_loadings)
+    if(mean_direction == -1){
+    loadings<-loadings*(-1)
+    } else {
+    loadings<-loadings}
+
+# run my modified GWAMA function
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+my_GWAMA(x=dat,
+          cov_Z=CTI,
+          h2=loadings,
+          out=".",
+          name="my_GWAMA_covmatrix_26082021",
+          output_gz=F,
+          check_columns=F)
+
+```
+
+## Munge and format files
+
+```{r munge_cov_GWAMA, eval=F}
+# prepare GWAMA file #
+# set work directory to where GWAMA file is stored
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+# store file name in object called file
+file<-list.files(pattern="covmatrix_26082021.N_weighted_GWAMA.results")
+# load into R
+library(data.table)
+GWAMA<-fread(file,header=T,data.table = F)
+
+# rename columns (rename N_eff into N so that GenomicSEM recognises it as N column)
+names(GWAMA)[which(names(GWAMA)=="N_eff")]<-"N"
+names(GWAMA)[which(names(GWAMA)=="PVAL")]<-"P"
+
+GWAMA<-GWAMA[,c("SNPID","CHR","BP","EA","OA","EAF","MAF","N","BETA","SE","Z","P")]
+
+# setwd to where you want to save GWAMA
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+# write table 
+fwrite(GWAMA,file="GWAMA_cov_header.txt", quote=FALSE,col.names=TRUE,row.names=F,sep=" ",na="NA")
+
+#load dependencies for genomic SEM
+library(devtools)
+library(GenomicSEM)
+
+files<-"GWAMA_cov_header.txt"
+
+# use 1000G reference genome (HapMap 3)
+# wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2
+hm3<-paste0(getwd(),"/GWAS_header/w_hm3.noMHC.snplist.txt")
+
+trait.names<-"GenomicPCA_cov"
+
+N<-NA
+
+munge(files=files,
+      hm3=hm3,
+      trait.names = trait.names,
+      N=N)
+
+```
+
+## Calculate LDSC 
+
+```{r ldsc_cov,eval=F}
+setwd(paste0(getwd(),"/GWAS_munged"))
+
+traits<-c("speeding.sumstats.gz","drinking.sumstats.gz","smoking.sumstats.gz","sexual_partners.sumstats.gz",paste0(getwd(),"/Evaluate_GWAMA/Risk_PC.sumstats.gz"),paste0(getwd(),"/Evaluate_GWAMA/GenomicPCA_cov.sumstats.gz"))
+
+ld<- "eur_w_ld_chr/"
+wld<- "eur_w_ld_chr/"
+trait.names<-c("speeding","drinking","smoking","sexual_partners","phenotypicPC","genomicPC")
+sample.prev<-c(NA,NA,.59,NA,NA,NA)
+population.prev<-c(NA,NA,.5,NA,NA,NA)
+
+LDSCoutput_evaluate_GWAMA<-ldsc(traits=traits,
+								 sample.prev=sample.prev,
+								 population.prev=population.prev,
+								 ld=ld,wld=wld,
+								 trait.names = trait.names, stand = T)
+
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+save(LDSCoutput_evaluate_GWAMA, file="Evaluate_cov_GWAMA.RData")
+```
+
+# Heatmap
+
+```{r heatmap_covariance, echo=FALSE, warning=FALSE,fig.height=4.5}
+# create covariance matrix in ggplot
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/data"))
+load("Evaluate_cov_GWAMA.RData")
+
+dimnames(LDSCoutput_evaluate_GWAMA$S_Stand)[[1]]<-dimnames(LDSCoutput_evaluate_GWAMA$S)[[2]]
+dimnames(LDSCoutput_evaluate_GWAMA$S_Stand)[[2]]<-dimnames(LDSCoutput_evaluate_GWAMA$S)[[2]]
+
+cormatrix<-LDSCoutput_evaluate_GWAMA$S_Stand 
+
+get_lower_tri<-function(cormatrix){
+  cormatrix[upper.tri(cormatrix)] <- NA
+  return(cormatrix)
+}
+lower_triangle<-get_lower_tri(cormatrix)
+
+#melt to plot
+lower_triangle<-reshape2::melt(lower_triangle)
+lower_triangle$value<-round(lower_triangle$value, digits = 2)
+
+library(ggplot2)
+heatmap<-
+  ggplot(data=lower_triangle, aes(Var1,Var2,fill=value))+
+      geom_tile(color = "white")+
+      theme_minimal()+ 
+      theme_bw()+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   size = 12, hjust = 1))+
+      theme(axis.title.x=element_blank(),
+            axis.title.y = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.border = element_blank(),
+            axis.ticks = element_blank(),
+            legend.justification = c(1,0),
+            #legend.position = c(0.45,0.7),
+            legend.direction = "horizontal")+  
+      scale_fill_gradient2(low="lightpink",high="red4",mid ="indianred1",
+                            midpoint=0,limit=c(-1,1),na.value="white",
+                           name="Genetic\ncorrelation")+
+      guides(fill=guide_colorbar(barwidth = 7,barheight = 1,title.position = "top",title.hjust = 0.5))+
+      coord_fixed()
+
+heatmap+
+  geom_text(aes(Var1,Var2,label=value),color="black",size=4)
+```
+
+
+The resulting genetic PC sumstats weighted by PC loadings extracted from a covariance matrix index very similar signal as those extracted from a correlation matrix.
+
+By using a covariance instead of a correlation matrix, the genetic correlation between our genotypic PC sumstats and the phenotypic PC sumstats slighly declined (rcor = 0.99 vs. rcov = -0.95), suggesting that using PC loadings from a correlation matrix to weigh the SNP-weights produced slightly more accurate results. 
+The genetic correlation between our genotypic PC and individual risky behaviors also slightly shifted.
+
+
+<br>
+<br>
+
+
+***
+
+
+
+# Compare our genetic PC sumstats to other traits 
+
+These genetic PC sumstats have been extracted from a covariance instead of a correlation matrix.
+In the following plots, the blue line indicates the central correlation line and the red line is the line of identity with an intercept of 1 and a slope of -1: `x=-y`. 
+
+## Our genetic PC sumstats vs. Linner's phenotypic PC sumstats
+
+```{r phenogenoPCcov,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = ls())
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/Evaluate_GWAMA"))
+phenoPC<-fread("Risk_PC.sumstats.gz", header=T,data.table = F)
+names(phenoPC)[2:ncol(phenoPC)]<-paste0("phenoPC_",names(phenoPC))[2:ncol(phenoPC)]
+
+genoPC<-fread("GenomicPCA_cov.sumstats.gz",header=T,data.table = F)
+names(genoPC)[2:ncol(genoPC)]<-paste0("genoPC_",names(genoPC))[2:ncol(genoPC)]
+
+both<-merge(genoPC, phenoPC, by = "SNP")
+
+PC_plot<-ggplot(both, aes(x=phenoPC_Z, y=genoPC_Z)) + 
+                    geom_point(color="seagreen4",alpha=0.4) + 
+                    ggtitle("Phenotypic PC sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "Phenotypic PC sumstats Z scores")+
+                    #, limits = c(5, 15), breaks = seq(5, 15, 2)) 
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    #, limits = c(5,15), breaks = seq(5, 15, 2)) + 
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("pheno_vs_genoPC_unstand.png", width = 7, height = 6, units = "in", res = 500)
+PC_plot
+dev.off()
+```
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/pheno_vs_genoPC_unstand.png)
+
+
+
+## Our genetic PC sumstats vs. speeding sumstats
+```{r PC_speeding_cov,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = setdiff(ls(), "genoPC"))
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/GWAS_munged"))
+speeding<-fread("speeding.sumstats.gz", header=T,data.table = F)
+names(speeding)[2:ncol(speeding)]<-paste0("speeding_",names(speeding))[2:ncol(speeding)]
+
+both<-merge(genoPC, speeding, by = "SNP")
+
+speeding_plot<-ggplot(both, aes(x=speeding_Z, y=genoPC_Z)) + 
+                    geom_point(color="seagreen4",alpha=0.4) + 
+                    ggtitle("Speeding sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "Speeding sumstats Z scores")+
+                    #, limits = c(5, 15), breaks = seq(5, 15, 2)) 
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    #, limits = c(5,15), breaks = seq(5, 15, 2)) + 
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("speeding_vs_genoPC_unstand.png", width = 7, height = 6, units = "in", res = 500)
+speeding_plot
+dev.off()
+```
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/speeding_vs_genoPC_unstand.png)
+
+
+## Our genetic PC sumstats vs. drinking sumstats
+```{r PC_drinking_cov,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = setdiff(ls(), "genoPC"))
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/GWAS_munged"))
+drinking<-fread("drinking.sumstats.gz", header=T,data.table = F)
+names(drinking)[2:ncol(drinking)]<-paste0("drinking_",names(drinking))[2:ncol(drinking)]
+
+both<-merge(genoPC, drinking, by = "SNP")
+
+drinking_plot<-ggplot(both, aes(x=drinking_Z, y=genoPC_Z)) + 
+                    geom_point(color="seagreen4",alpha=0.4) + 
+                    ggtitle("Drinking sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "Drinking sumstats Z scores")+
+                    #, limits = c(5, 15), breaks = seq(5, 15, 2)) 
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    #, limits = c(5,15), breaks = seq(5, 15, 2)) + 
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("drinking_vs_genoPC_unstand.png", width = 7, height = 6, units = "in", res = 500)
+drinking_plot
+dev.off()
+```
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/drinking_vs_genoPC_unstand.png)
+
+
+## Our genetic PC sumstats vs. smoking sumstats
+
+```{r scatter_smoking_cov,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = setdiff(ls(), "genoPC"))
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/GWAS_munged"))
+smoking<-fread("smoking.sumstats.gz", header=T,data.table = F)
+names(smoking)[2:ncol(smoking)]<-paste0("smoking_",names(smoking))[2:ncol(smoking)]
+
+both<-merge(genoPC, smoking, by = "SNP")
+
+smoking_plot<-ggplot(both, aes(x=smoking_Z, y=genoPC_Z)) + 
+                    geom_point(color="seagreen4",alpha=0.4) + 
+                    ggtitle("smoking sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "smoking sumstats Z scores")+
+                    #, limits = c(5, 15), breaks = seq(5, 15, 2)) 
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    #, limits = c(5,15), breaks = seq(5, 15, 2)) + 
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("smoking_vs_genoPC_unstand.png", width = 7, height = 6, units = "in", res = 500)
+smoking_plot
+dev.off()
+```
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/smoking_vs_genoPC_unstand.png)
+
+
+
+## Our genetic PC sumstats vs. sexual partners sumstats
+
+```{r scatter_sexual_cov,echo=F, eval=F, message=F,warning=FALSE}
+rm(list = setdiff(ls(), "genoPC"))
+library(data.table)
+library(ggplot2)
+setwd(paste0(getwd(),"/GWAS_munged"))
+sexual<-fread("sexual_partners.sumstats.gz", header=T,data.table = F)
+names(sexual)[2:ncol(sexual)]<-paste0("sexual_",names(sexual))[2:ncol(sexual)]
+
+both<-merge(genoPC, sexual, by = "SNP")
+
+sexual_plot<-ggplot(both, aes(x=sexual_Z, y=genoPC_Z)) + 
+                    geom_point(color="seagreen4",alpha=0.4) + 
+                    ggtitle("Sexual partners sumstats vs. our genotypic PC sumstats") + 
+                    geom_smooth(method=lm, se=FALSE) + 
+                    scale_x_continuous(name = "Sexual partners sumstats Z scores")+
+                    scale_y_continuous(name = "Our genotypic PC sumstats Z scores")+
+                    theme(plot.title = element_text(hjust = 0.5), panel.background = element_blank(), axis.line = element_line(color="black"), axis.line.x = element_line(color="black"))+ theme_bw()+
+  geom_abline(intercept=0,slope=(1),linetype="dashed",color="red",show.legend=T, size=0.5,alpha=0.7)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/plots"))
+png("sexual_vs_genoPC_unstand.png", width = 7, height = 6, units = "in", res = 500)
+sexual_plot
+dev.off()
+```
+
+
+![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/sexual_vs_genoPC_unstand.png)
