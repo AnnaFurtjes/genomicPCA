@@ -1,14 +1,20 @@
 ---
-title: "Principal component analysis in GWAS summary statistics"
+title: "Genomic PCA"
 author: "Anna Elisabeth Furtjes, King's College London"
 date: "26/08/2021"
 output:
-  html_document:
-    code_folding: show
+  prettydoc::html_pretty:
+    prettydoc::code_folding: show
     toc: yes
     toc_depth: 2
-    toc_float: yes
+    prettydoc::toc_float: yes
+    theme: leonids
+    highlight: github
+    includes:
+      after_body: footer.html 
 ---
+
+
 
 ```{r setup, include=F,echo=F}
 require(knitr)
@@ -16,7 +22,7 @@ opts_knit$set(root.dir = "C:/Users/k1894405/OneDrive - King's College London/PhD
 knitr::opts_chunk$set(echo = TRUE, fig.align="center")
 ```
 
-# **Background and reasoning**
+# Background and reasoning
 
 **Available data:**
 In the following analysis, we use freely available genome-wide association study (GWAS) summary statistics from [Linner et al. (2019)](https://doi.org/10.1038/s41588-018-0309-3) on risky behaviors . In this study, the authors performed GWAS on the propensity to speeding, alcohol consumption, smoking, and the number of self-reported sexual partners. In addition to the four traits, they extracted the first principal component (PC) of these four traits in a principal component analysis (PCA), and performed a GWAS on this first PC to create a summary of overall risky behaviors. The summary statistics are available on https://www.thessgac.org/data .
@@ -31,12 +37,13 @@ Using Linner's summary statistics of speeding, drinking, smoking and sexual part
 To validate the results, we will compare SNP effects from Linner's phenotypic PC GWAS with effect sizes extracted in our analysis. A perfect correlation between our genetic PC sumstats that we created using summary statistics only (called *genetic PCA* in this document) and the PC sumstats would indicate that we captured the same effects as Linner et al. obtained in their PCA with *phenotypic* data.
 Validating the resulting genetic PC sumstats serves as a sanity check and is crucial as, to our knowledge, this kind of approach is unprecedented.
 
+# Procedure 
 
-# Obtain genetic correlation matrix
+## A. Obtain genetic correlation matrix
 
 After downloading the summary statistics, we use the genomic SEM package in R to pre-process and munge the files ([Grotzinger et al., 2019](https://www.nature.com/articles/s41562-019-0566-x)). We perform LDSC to obtain a genetic correlation matrix. 
 
-## Step 1: Prepare and munge files
+### Step 1: Prepare and munge files
 
 ```{r prepare_data, eval=FALSE,echo=TRUE}
 library(data.table)
@@ -89,7 +96,7 @@ munge(files=files,
       N=N)
 ```
 
-## Step 2: Perform linkage disequilibrium score regression (LDSC)
+### Step 2: Perform linkage disequilibrium score regression (LDSC)
 ```{r ldsc, eval=FALSE,echo=TRUE}
 # download and unpack SNP weights: 
 # wget https://data.broadinstitute.org/alkesgroup/LDSCORE/eur_w_ld_chr.tar.bz2
@@ -126,7 +133,7 @@ save(LDSCoutput_risk_taking, file="risk_taking_stand.RData")
 
 ```
 
-## Step 3: Display genetic correlation matrix
+### Step 3: Display genetic correlation matrix
 
 ```{r heatmap, echo=FALSE, warning=FALSE,fig.height=4.5}
 library(stringr)
@@ -224,7 +231,7 @@ Linners_map+
 
 ```
 
-## LDSC intercepts
+### LDSC intercepts
 
 LDSC intercepts quantify sample overlap and other confounding factors (such as phenotypic correlation and population stratification) between the four risky behaviors we are analysing here.
 
@@ -283,8 +290,8 @@ heatmap+
 
 ***
 
-# **Principal Component Analysis**
-## Eigen decomposition
+## B. Principal Component Analysis
+### Eigen decomposition
 
 We perform eigen decomposition on the __correlation matrix__ using the `eigen` function. We aim to obtain standardised loadings of the four risky behaviors on the first PC, by standardising the eigenvectors of the first PC with their corresponding eigenvalue.
 
@@ -346,11 +353,11 @@ write_matrix(matrix_print)
 ***
 
 
-# **Create genetic PC sumstats** 
+## C. Create genetic PC sumstats
 
 We format the files as expected by the `multivariate_GWAMA()` function by Baselman et al. (2019). It expects exactly nine columns (SNPID,CHR,BP,EA,OA,EAF,N,Z,P) and that effect sizes must be z scores. We modified the function from Baselman et al. as displayed below in order to create our genetic PC sumstats.
 
-## Step 1: Format the risky behaviors sumstats
+### Step 1: Format the risky behaviors sumstats
 
 ```{r format_GWAMA, eval=FALSE,echo=TRUE}
 source("https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE")
@@ -429,7 +436,7 @@ for(i in 1:nrow(all_files)){
 ```
 
 
-## Step 2: Modify GWAMA function
+### Step 2: Modify GWAMA function
 
 ![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/Baselman_equation.PNG){ width=45% }
 
@@ -445,7 +452,7 @@ If we only replace heritabilities with standardised loadings in the arguments of
     
 I have made the following changes to address these problems:
 
-### 1) Disable sanity check for negative heritabilites:
+#### 1) Disable sanity check for negative heritabilites:
 ```{r sanity_check, eval=FALSE,echo=TRUE}
 source("https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE")
 my_GWAMA<-multivariate_GWAMA
@@ -453,7 +460,7 @@ trace(my_GWAMA,edit=T)
 ```
 I deleted _lines 217-221_, which disables the sanity check to stop the function from running when loadings are not in the expected h2 format (h2<0 & h2>1).
 
-### 2) Modify code to calculate our weights
+#### 2) Modify code to calculate our weights
 **Original code:**
 ```{r original_code, eval=F,echo=T}
 # line 663
@@ -471,7 +478,7 @@ sqrt_W<-w
 ```
 
 
-## Step 3: Run modified function
+### Step 3: Run modified function
 ```{r calculate_GWAMA, eval=F,echo=T}
 # load dependencies
 source("https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE")
@@ -550,7 +557,7 @@ For example, the log file shows the number of total and significant SNPs:
 *** 
 
 
-# Evaluate our genetic PC sumstats
+# Evaluate results
 
 We chose to evaluate our genetic PC summary statistics using data from Linner et al. (2019) because they provide GWAS on a first phenotypic PC derived from the four GWAS phenotypes. We use their phenotypic PC sumstats as a reference for how well our genetic PC represents a summary of SNP effects contributed by the four risky behaviors: speeding, drinking, smoking and sexual partners. 
 If our genetic PC summary statistics highly correlate with the phenotypic PC sumstats by Linner, we can be confident that our genetic PC extracted purely based on GWAS sumstats is capturing the same SNP effects as GWAS sumstats calculated for a phenotypic PC.
@@ -560,7 +567,7 @@ We will perform genetic correlations between our genetic PC sumstats, the phenot
 It is important to note that the directions indicated by the PC loadings are arbitrary and it would not change the signal contained in the statistics if we flipped the signs of the loadings as long as this is done consistently across all PC loadings. If negative PC loadings are obtained, one can weight the SNPs with negative PC loadings, but we suggest to scale the SNP effects in the most sensible direction to make results more intuitively interpretable. 
 
 
-## Prepare and munge sumstats for LDSC
+### Prepare and munge sumstats for LDSC
 ```{r munge_GWAMA,eval=F,echo=T}
 # set work directory to where raw GWAS are stored
 setwd(paste0(getwd(),"/GWAS_raw"))
@@ -619,7 +626,7 @@ munge(files=files,
       N=N)
 ```
 
-## Perform LDSC 
+### Perform LDSC 
 
 ```{r LDSC_GWAMA,eval=F,echo=T}
 setwd(paste0(getwd(),"/GWAS_munged"))
@@ -691,7 +698,7 @@ heatmap+
 *Note the strong genetic correlation between our genomic PCA sumstats and the phenotypic PC sumstats. It suggests that we extract the same SNP effects from GWAS summary statistics only as was captured by Linner when extracting a phenotypic PC and calculating GWAS sumstats for it.* 
 
 
-## Display the LDSC intercepts 
+### Display LDSC intercepts 
 
 LDSC intercepts capture sample overlap, among other confounding factors. We would expect traits compared with themselves to have a perfect sample overlap (1 or very close to 1). When comparing our genetic PC sumstats with the four risky behaviors sumstats, we expect substantial sample overlap as all four have contributed to our genetic PC. In theory, our genetic PC and the phenotypic PC by Linner capture the same signal, we expect an even stronger sample overlap between these two traits. 
 
@@ -747,11 +754,11 @@ heatmap+
 
 
 
-# Comparison of our genetic PC sumstats with other traits
+### Comparison of our genetic PC sumstats with other traits
 
 In the following plots, the blue line indicates the central correlation line and the red line is the line of identity with an intercept of 1 and a slope of -1: `x=y`. 
 
-## Our genetic PC sumstats vs. Linner's phenotypic PC sumstats
+#### Our genetic PC sumstats vs. Linner's phenotypic PC sumstats
 
 ```{r PC_plot,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = ls())
@@ -782,10 +789,10 @@ PC_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/pheno_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/pheno_vs_genoPC.png)
 
 
-## Our genetic PC sumstats vs. speeding sumstats
+#### Our genetic PC sumstats vs. speeding sumstats
 ```{r speeding_plot,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = setdiff(ls(), "genoPC"))
 library(data.table)
@@ -813,10 +820,10 @@ speeding_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/speeding_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/speeding_vs_genoPC.png)
 
 
-## Our genetic PC sumstats vs. drinking sumstats
+#### Our genetic PC sumstats vs. drinking sumstats
 ```{r PC_drinking,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = setdiff(ls(), "genoPC"))
 library(data.table)
@@ -844,10 +851,10 @@ drinking_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/drinking_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/drinking_vs_genoPC.png)
 
 
-## Our genetic PC sumstats vs. smoking sumstats
+#### Our genetic PC sumstats vs. smoking sumstats
 
 ```{r scatter_smoking,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = setdiff(ls(), "genoPC"))
@@ -875,11 +882,11 @@ png("smoking_vs_genoPC.png", width = 7, height = 6, units = "in", res = 500)
 smoking_plot
 dev.off()
 ```
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/smoking_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/smoking_vs_genoPC.png)
 
 
 
-## Our genetic PC sumstats vs. sexual partners sumstats
+#### Our genetic PC sumstats vs. sexual partners sumstats
 
 ```{r scatter_sexual,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = setdiff(ls(), "genoPC"))
@@ -909,7 +916,7 @@ dev.off()
 ```
 
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/sexual_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/sexual_vs_genoPC.png)
 
 
 <br>
@@ -920,10 +927,14 @@ dev.off()
 ***
 
 
-# Genetic PC sumstats extracted from covariance matrix 
+# Alternative procedure 
+
 
 For comparison, we also calculated genetic PC sumstats using a covariance matrix obtained through LDSC, instead of a correlation matrix. We run the same code as displayed above (Step 3: Run GWAMA with modified function), but replacing the standardised genetic correlation matrix with the unstandardised matrix.
 
+
+
+### Genetic PC sumstats extracted from covariance matrix 
 
 ```{r recalculate_GWAMA, eval=F,echo=T}
 # load dependencies
@@ -994,7 +1005,7 @@ my_GWAMA(x=dat,
 
 ```
 
-## Munge and format files
+#### Munge and format files
 
 ```{r munge_cov_GWAMA, eval=F}
 # prepare GWAMA file #
@@ -1038,7 +1049,7 @@ munge(files=files,
 
 ```
 
-## Calculate LDSC 
+#### Calculate LDSC 
 
 ```{r ldsc_cov,eval=F}
 setwd(paste0(getwd(),"/GWAS_munged"))
@@ -1061,7 +1072,7 @@ setwd(paste0(getwd(),"/Evaluate_GWAMA"))
 save(LDSCoutput_evaluate_GWAMA, file="Evaluate_cov_GWAMA.RData")
 ```
 
-# Heatmap
+#### Heatmap
 
 ```{r heatmap_covariance, echo=FALSE, warning=FALSE,fig.height=4.5}
 # create covariance matrix in ggplot
@@ -1126,12 +1137,12 @@ The genetic correlation between our genotypic PC and individual risky behaviors 
 
 
 
-# Compare our genetic PC sumstats to other traits 
+### Compare our genetic PC sumstats to other traits 
 
 These genetic PC sumstats have been extracted from a covariance instead of a correlation matrix.
 In the following plots, the blue line indicates the central correlation line and the red line is the line of identity with an intercept of 1 and a slope of -1: `x=-y`. 
 
-## Our genetic PC sumstats vs. Linner's phenotypic PC sumstats
+#### Our genetic PC sumstats vs. Linner's phenotypic PC sumstats
 
 ```{r phenogenoPCcov,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = ls())
@@ -1163,11 +1174,12 @@ PC_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/pheno_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/pheno_vs_genoPC_unstand.png)
 
 
 
-## Our genetic PC sumstats vs. speeding sumstats
+
+#### Our genetic PC sumstats vs. speeding sumstats
 ```{r PC_speeding_cov,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = setdiff(ls(), "genoPC"))
 library(data.table)
@@ -1195,10 +1207,10 @@ speeding_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/speeding_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/speeding_vs_genoPC_unstand.png)
 
 
-## Our genetic PC sumstats vs. drinking sumstats
+#### Our genetic PC sumstats vs. drinking sumstats
 ```{r PC_drinking_cov,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = setdiff(ls(), "genoPC"))
 library(data.table)
@@ -1226,10 +1238,10 @@ drinking_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/drinking_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/drinking_vs_genoPC_unstand.png)
 
 
-## Our genetic PC sumstats vs. smoking sumstats
+#### Our genetic PC sumstats vs. smoking sumstats
 
 ```{r scatter_smoking_cov,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = setdiff(ls(), "genoPC"))
@@ -1257,11 +1269,11 @@ png("smoking_vs_genoPC_unstand.png", width = 7, height = 6, units = "in", res = 
 smoking_plot
 dev.off()
 ```
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/smoking_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/smoking_vs_genoPC_unstand.png)
 
 
 
-## Our genetic PC sumstats vs. sexual partners sumstats
+#### Our genetic PC sumstats vs. sexual partners sumstats
 
 ```{r scatter_sexual_cov,echo=F, eval=F, message=F,warning=FALSE}
 rm(list = setdiff(ls(), "genoPC"))
@@ -1289,4 +1301,4 @@ dev.off()
 ```
 
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/PC_plots_26082021/sexual_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/sexual_vs_genoPC_unstand.png)

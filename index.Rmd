@@ -1,0 +1,36 @@
+---
+title: "Principal component analysis of GWAS summary statistics"
+output:
+  prettydoc::html_pretty:
+    prettydoc::code_folding: show
+    toc: yes
+    toc_depth: 2
+    prettydoc::toc_float: yes
+    theme: leonids
+    highlight: github
+    includes:
+      after_body: footer.html 
+---
+
+
+
+***
+
+Here we present a method we call **Genomic PCA** to derive GWAS summary statistics for a genetic principal component of multiple GWAS phenotypes derived from samples of unknown degrees of overlap using univariate summary statistics for the individual phenotypes. This procedure simply relies on publicly available GWAS summary statistics as input data. We make use of the [GenomicSEM software](https://github.com/GenomicSEM/GenomicSEM/wiki) and the work on genome-wide multivariate meta-analysis by [Baselmans et al. (2019)](https://pubmed.ncbi.nlm.nih.gov/30643256/). 
+
+
+Authors: 
+
+* Anna E. Fürtjes
+* Elliot M. Tucker-Drob
+* Stuart J. Ritchie
+
+
+$$\\[0.05in]$$
+
+***
+
+Click [here](25082021_geneticPCA_explanation.html) for a reproducible step-by-step demonstration of genomic PCA.
+
+
+$$\\[0.1in]$$
