@@ -8,7 +8,7 @@ output:
     toc: yes
     toc_depth: 2
     prettydoc::toc_float: yes
-    theme: leonids
+    theme: cayman
     highlight: github
     includes:
       after_body: footer.html 
