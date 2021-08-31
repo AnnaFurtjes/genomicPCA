@@ -27,6 +27,8 @@ knitr::opts_chunk$set(echo = TRUE, fig.align="center")
 
 # Background and reasoning
 
+<br>
+
 **Available data:**
 In the following analysis, we use freely available genome-wide association study (GWAS) summary statistics from [Linner et al. (2019)](https://doi.org/10.1038/s41588-018-0309-3) on risky behaviors . In this study, the authors performed GWAS on the propensity to speeding, alcohol consumption, smoking, and the number of self-reported sexual partners. In addition to the four traits, they extracted the first principal component (PC) of these four traits in a principal component analysis (PCA), and performed a GWAS on this first PC to create a summary of overall risky behaviors. The summary statistics are available on https://www.thessgac.org/data . The GWAS summary statistics for ever smoking status were derived from UKB as well as TAG, whereas all the others (including the PC sumstats) were obtained from UKB only.
 
@@ -202,7 +204,7 @@ heatmap+
   geom_text(aes(Var1,Var2,label=value),color="black",size=4)
 ```
 
-### **Sanity check:** 
+### Sanity check:
 
 To validate our correlation matrix, we contacted Linner et al. (2019) who shared their LDSC results:
 They found very similar genetic correlations between the four risky behaviors using LDSC and we suggest that our pre-processing was successful.
@@ -304,13 +306,21 @@ heatmap+
 
 <br>
 
+</br>
+
 ***
 
+
+
 ## B. Principal Component Analysis
+
+<br>
+
 ### Eigen decomposition
 
 We perform eigen decomposition on the __correlation matrix__ using the `eigen` function. We aim to obtain standardised loadings of the four risky behaviors on the first PC, by standardising the eigenvectors of the first PC with their corresponding eigenvalue.
 
+<br>
 
 ### Eigenvectors
 ```{r eigenvectors}
@@ -335,6 +345,7 @@ write_matrix <- function(x) {
 write_matrix(eigenvectors)
 ```
 
+<br>
 
 ### Eigenvalues and explained variance
 ```{r eigenvalues,message=FALSE,warning=FALSE,message=FALSE}
@@ -474,6 +485,8 @@ If we only replace heritabilities with standardised loadings in the arguments of
     
 I have made the following changes to address these problems:
 
+<br>
+
 #### 1) Disable sanity check for negative heritabilites:
 ```{r sanity_check, eval=FALSE,echo=TRUE}
 source("https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE")
@@ -481,6 +494,10 @@ my_GWAMA<-multivariate_GWAMA
 trace(my_GWAMA,edit=T)
 ```
 I deleted _lines 217-221_, which disables the sanity check to stop the function from running when loadings are not in the expected h2 format (h2<0 & h2>1).
+
+
+<br>
+
 
 #### 2) Modify code to calculate our weights
 **Original code:**
@@ -590,6 +607,7 @@ We will perform genetic correlations between our genetic PC sumstats, the phenot
 
 It is important to note that the directions indicated by the PC loadings are arbitrary and it would not change the signal contained in the statistics if we flipped the signs of the loadings as long as this is done consistently across all PC loadings. If negative PC loadings are obtained, one can weight the SNPs with negative PC loadings, but we suggest to scale the SNP effects in the most sensible direction to make results more intuitively interpretable. 
 
+<br>
 
 ### Prepare and munge sumstats for LDSC
 ```{r munge_GWAMA,eval=F,echo=T}
@@ -650,6 +668,8 @@ munge(files=files,
       N=N)
 ```
 
+<br>
+
 ### Perform LDSC 
 
 ```{r LDSC_GWAMA,eval=F,echo=T}
@@ -673,6 +693,7 @@ setwd(paste0(getwd(),"/Evaluate_GWAMA"))
 save(LDSCoutput_evaluate_GWAMA, file="Evaluate_GWAMA.RData")
 ```
 
+<br>
 
 ### Display genetic correlations
 
@@ -721,6 +742,7 @@ heatmap+
 
 *Note the strong genetic correlation between our genomic PCA sumstats and the phenotypic PC sumstats. It suggests that we extract the same SNP effects from GWAS summary statistics only as was captured by Linner when extracting a phenotypic PC and calculating GWAS sumstats for it.* 
 
+<br>
 
 ### Display LDSC intercepts 
 
@@ -777,8 +799,12 @@ heatmap+
 ```
 
 
+<br>
 
 ### Comparison of our genetic PC sumstats with other traits
+
+<br> 
+
 
 In the following plots, the blue line indicates the central correlation line and the red line is the line of identity with an intercept of 1 and a slope of -1: `x=y`. 
 
@@ -813,7 +839,7 @@ PC_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/pheno_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/pheno_vs_genoPC.jpg)
 
 
 #### Our genetic PC sumstats vs. speeding sumstats
@@ -844,7 +870,7 @@ speeding_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/speeding_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/speeding_vs_genoPC.jpg)
 
 
 #### Our genetic PC sumstats vs. drinking sumstats
@@ -875,7 +901,7 @@ drinking_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/drinking_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/drinking_vs_genoPC.jpg)
 
 
 #### Our genetic PC sumstats vs. smoking sumstats
@@ -906,7 +932,8 @@ png("smoking_vs_genoPC.png", width = 7, height = 6, units = "in", res = 500)
 smoking_plot
 dev.off()
 ```
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/smoking_vs_genoPC.png)
+
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/smoking_vs_genoPC.jpg)
 
 
 
@@ -940,7 +967,7 @@ dev.off()
 ```
 
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/sexual_vs_genoPC.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/sexual_vs_genoPC.jpg)
 
 
 <br>
@@ -1198,7 +1225,7 @@ PC_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/pheno_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/pheno_vs_genoPC_unstand.jpg)
 
 
 
@@ -1231,7 +1258,7 @@ speeding_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/speeding_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/speeding_vs_genoPC_unstand.jpg)
 
 
 #### Our genetic PC sumstats vs. drinking sumstats
@@ -1262,7 +1289,7 @@ drinking_plot
 dev.off()
 ```
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/drinking_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/drinking_vs_genoPC_unstand.jpg)
 
 
 #### Our genetic PC sumstats vs. smoking sumstats
@@ -1293,7 +1320,8 @@ png("smoking_vs_genoPC_unstand.png", width = 7, height = 6, units = "in", res = 
 smoking_plot
 dev.off()
 ```
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/smoking_vs_genoPC_unstand.png)
+
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/smoking_vs_genoPC_unstand.jpg)
 
 
 
@@ -1325,4 +1353,4 @@ dev.off()
 ```
 
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/sexual_vs_genoPC_unstand.png)
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/plots/sexual_vs_genoPC_unstand.jpg)

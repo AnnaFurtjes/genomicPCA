@@ -359,6 +359,7 @@ div.tocify {
 <hr />
 <div id="background-and-reasoning" class="section level1">
 <h1>Background and reasoning</h1>
+<p><br></p>
 <p><strong>Available data:</strong> In the following analysis, we use freely available genome-wide association study (GWAS) summary statistics from <a href="https://doi.org/10.1038/s41588-018-0309-3">Linner et al. (2019)</a> on risky behaviors . In this study, the authors performed GWAS on the propensity to speeding, alcohol consumption, smoking, and the number of self-reported sexual partners. In addition to the four traits, they extracted the first principal component (PC) of these four traits in a principal component analysis (PCA), and performed a GWAS on this first PC to create a summary of overall risky behaviors. The summary statistics are available on <a href="https://www.thessgac.org/data" class="uri">https://www.thessgac.org/data</a> . The GWAS summary statistics for ever smoking status were derived from UKB as well as TAG, whereas all the others (including the PC sumstats) were obtained from UKB only.</p>
 <p><br></p>
 <p><strong>Aim of the analysis:</strong> Using Linner’s summary statistics of speeding, drinking, smoking and sexual partners, we will perform linkage disequilibirum score regression (LDSC) and obtain the genetic correlation matrix from the four risky behaviors in Linner et al. (2019). Using PCA, we will extract the first PC from this genetic correlation matrix. Resulting standardised PC loadings will be used to weight SNP effects (z-scores) contributed by the four risky behaviors. We have modified the R package provided by <a href="https://www.ncbi.nlm.nih.gov/pubmed/30643256">Baselman et al. (2019)</a> to create our genetic PC sumstats while allowing to correct for sample overlap.</p>
@@ -464,7 +465,7 @@ save(LDSCoutput_risk_taking, file=&quot;risk_taking_stand.RData&quot;)</code></p
 <p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="sanity-check" class="section level3">
-<h3><strong>Sanity check:</strong></h3>
+<h3>Sanity check:</h3>
 <p>To validate our correlation matrix, we contacted Linner et al. (2019) who shared their LDSC results: They found very similar genetic correlations between the four risky behaviors using LDSC and we suggest that our pre-processing was successful.</p>
 <p><img src="25082021_geneticPCA_explanation_files/figure-html/Linners_rg-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
@@ -473,14 +474,17 @@ save(LDSCoutput_risk_taking, file=&quot;risk_taking_stand.RData&quot;)</code></p
 <p>LDSC intercepts quantify sample overlap and other confounding factors (such as phenotypic correlation and population stratification) between the four risky behaviors we are analysing here.</p>
 <p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_intercept_four_traits-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p><br></p>
+<p></br></p>
 <hr />
 </div>
 </div>
 <div id="b.-principal-component-analysis" class="section level2">
 <h2>B. Principal Component Analysis</h2>
+<p><br></p>
 <div id="eigen-decomposition" class="section level3">
 <h3>Eigen decomposition</h3>
 <p>We perform eigen decomposition on the <strong>correlation matrix</strong> using the <code>eigen</code> function. We aim to obtain standardised loadings of the four risky behaviors on the first PC, by standardising the eigenvectors of the first PC with their corresponding eigenvalue.</p>
+<p><br></p>
 </div>
 <div id="eigenvectors" class="section level3">
 <h3>Eigenvectors</h3>
@@ -492,6 +496,7 @@ eigenvectors&lt;-round(eigen(cormatrix)$vectors,digits=3)</code></pre>
 0.544&amp;-0.481&amp;0.102&amp;-0.68 \\
 0.565&amp;-0.179&amp;0.476&amp;0.65 \\
 \end{bmatrix}\]</span></p>
+<p><br></p>
 </div>
 <div id="eigenvalues-and-explained-variance" class="section level3">
 <h3>Eigenvalues and explained variance</h3>
@@ -640,12 +645,14 @@ for(i in 1:nrow(all_files)){
 <li><p>It won’t allow to calculate our weights, as there is no sqrt() of a negative value: <code>sqrt(-number)=NaN</code></p></li>
 </ol>
 <p>I have made the following changes to address these problems:</p>
+<p><br></p>
 <div id="disable-sanity-check-for-negative-heritabilites" class="section level4">
 <h4>1) Disable sanity check for negative heritabilites:</h4>
 <pre class="r"><code>source(&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;)
 my_GWAMA&lt;-multivariate_GWAMA
 trace(my_GWAMA,edit=T)</code></pre>
 <p>I deleted <em>lines 217-221</em>, which disables the sanity check to stop the function from running when loadings are not in the expected h2 format (h2&lt;0 &amp; h2&gt;1).</p>
+<p><br></p>
 </div>
 <div id="modify-code-to-calculate-our-weights" class="section level4">
 <h4>2) Modify code to calculate our weights</h4>
@@ -738,6 +745,7 @@ my_GWAMA(x=dat,
 <p>We chose to evaluate our genetic PC summary statistics using data from Linner et al. (2019) because they provide GWAS on a first phenotypic PC derived from the four GWAS phenotypes. We use their phenotypic PC sumstats as a reference for how well our genetic PC represents a summary of SNP effects contributed by the four risky behaviors: speeding, drinking, smoking and sexual partners. If our genetic PC summary statistics highly correlate with the phenotypic PC sumstats by Linner, we can be confident that our genetic PC extracted purely based on GWAS sumstats is capturing the same SNP effects as GWAS sumstats calculated for a phenotypic PC.</p>
 <p>We will perform genetic correlations between our genetic PC sumstats, the phenotypic PC sumstats and the four risky behaviors summary stats. We will also plot z statistics contained in our genetic PC sumstats against those contained in the other summary statistics and calculate their correlations.</p>
 <p>It is important to note that the directions indicated by the PC loadings are arbitrary and it would not change the signal contained in the statistics if we flipped the signs of the loadings as long as this is done consistently across all PC loadings. If negative PC loadings are obtained, one can weight the SNPs with negative PC loadings, but we suggest to scale the SNP effects in the most sensible direction to make results more intuitively interpretable.</p>
+<p><br></p>
 <div id="prepare-and-munge-sumstats-for-ldsc" class="section level3">
 <h3>Prepare and munge sumstats for LDSC</h3>
 <pre class="r"><code># set work directory to where raw GWAS are stored
@@ -795,6 +803,7 @@ munge(files=files,
       hm3=hm3,
       trait.names = trait.names,
       N=N)</code></pre>
+<p><br></p>
 </div>
 <div id="perform-ldsc" class="section level3">
 <h3>Perform LDSC</h3>
@@ -816,11 +825,13 @@ LDSCoutput_evaluate_GWAMA&lt;-ldsc(traits=traits,
 
 setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
 save(LDSCoutput_evaluate_GWAMA, file=&quot;Evaluate_GWAMA.RData&quot;)</code></pre>
+<p><br></p>
 </div>
 <div id="display-genetic-correlations" class="section level3">
 <h3>Display genetic correlations</h3>
 <p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_GWAMA-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p><em>Note the strong genetic correlation between our genomic PCA sumstats and the phenotypic PC sumstats. It suggests that we extract the same SNP effects from GWAS summary statistics only as was captured by Linner when extracting a phenotypic PC and calculating GWAS sumstats for it.</em></p>
+<p><br></p>
 </div>
 <div id="display-ldsc-intercepts" class="section level3">
 <h3>Display LDSC intercepts</h3>
@@ -833,29 +844,31 @@ dimnames(LDSCoutput_evaluate_GWAMA$I)[[2]]&lt;-dimnames(LDSCoutput_evaluate_GWAM
 
 intercepts&lt;-data.matrix(round(LDSCoutput_evaluate_GWAMA$I,digits = 2))</code></pre>
 <p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_intercepts-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><br></p>
 </div>
 <div id="comparison-of-our-genetic-pc-sumstats-with-other-traits" class="section level3">
 <h3>Comparison of our genetic PC sumstats with other traits</h3>
+<p><br></p>
 <p>In the following plots, the blue line indicates the central correlation line and the red line is the line of identity with an intercept of 1 and a slope of -1: <code>x=y</code>.</p>
 <div id="our-genetic-pc-sumstats-vs.-linners-phenotypic-pc-sumstats" class="section level4">
 <h4>Our genetic PC sumstats vs. Linner’s phenotypic PC sumstats</h4>
-<p><img src="plots/pheno_vs_genoPC.png" /></p>
+<p><img src="plots/pheno_vs_genoPC.jpg" /></p>
 </div>
 <div id="our-genetic-pc-sumstats-vs.-speeding-sumstats" class="section level4">
 <h4>Our genetic PC sumstats vs. speeding sumstats</h4>
-<p><img src="plots/speeding_vs_genoPC.png" /></p>
+<p><img src="plots/speeding_vs_genoPC.jpg" /></p>
 </div>
 <div id="our-genetic-pc-sumstats-vs.-drinking-sumstats" class="section level4">
 <h4>Our genetic PC sumstats vs. drinking sumstats</h4>
-<p><img src="plots/drinking_vs_genoPC.png" /></p>
+<p><img src="plots/drinking_vs_genoPC.jpg" /></p>
 </div>
 <div id="our-genetic-pc-sumstats-vs.-smoking-sumstats" class="section level4">
 <h4>Our genetic PC sumstats vs. smoking sumstats</h4>
-<p><img src="plots/smoking_vs_genoPC.png" /></p>
+<p><img src="plots/smoking_vs_genoPC.jpg" /></p>
 </div>
 <div id="our-genetic-pc-sumstats-vs.-sexual-partners-sumstats" class="section level4">
 <h4>Our genetic PC sumstats vs. sexual partners sumstats</h4>
-<p><img src="plots/sexual_vs_genoPC.png" /></p>
+<p><img src="plots/sexual_vs_genoPC.jpg" /></p>
 <p><br></p>
 <p><br></p>
 <hr />
@@ -1008,23 +1021,23 @@ save(LDSCoutput_evaluate_GWAMA, file=&quot;Evaluate_cov_GWAMA.RData&quot;)</code
 <p>These genetic PC sumstats have been extracted from a covariance instead of a correlation matrix. In the following plots, the blue line indicates the central correlation line and the red line is the line of identity with an intercept of 1 and a slope of -1: <code>x=-y</code>.</p>
 <div id="our-genetic-pc-sumstats-vs.-linners-phenotypic-pc-sumstats-1" class="section level4">
 <h4>Our genetic PC sumstats vs. Linner’s phenotypic PC sumstats</h4>
-<p><img src="plots/pheno_vs_genoPC_unstand.png" /></p>
+<p><img src="plots/pheno_vs_genoPC_unstand.jpg" /></p>
 </div>
 <div id="our-genetic-pc-sumstats-vs.-speeding-sumstats-1" class="section level4">
 <h4>Our genetic PC sumstats vs. speeding sumstats</h4>
-<p><img src="plots/speeding_vs_genoPC_unstand.png" /></p>
+<p><img src="plots/speeding_vs_genoPC_unstand.jpg" /></p>
 </div>
 <div id="our-genetic-pc-sumstats-vs.-drinking-sumstats-1" class="section level4">
 <h4>Our genetic PC sumstats vs. drinking sumstats</h4>
-<p><img src="plots/drinking_vs_genoPC_unstand.png" /></p>
+<p><img src="plots/drinking_vs_genoPC_unstand.jpg" /></p>
 </div>
 <div id="our-genetic-pc-sumstats-vs.-smoking-sumstats-1" class="section level4">
 <h4>Our genetic PC sumstats vs. smoking sumstats</h4>
-<p><img src="plots/smoking_vs_genoPC_unstand.png" /></p>
+<p><img src="plots/smoking_vs_genoPC_unstand.jpg" /></p>
 </div>
 <div id="our-genetic-pc-sumstats-vs.-sexual-partners-sumstats-1" class="section level4">
 <h4>Our genetic PC sumstats vs. sexual partners sumstats</h4>
-<p><img src="plots/sexual_vs_genoPC_unstand.png" /></p>
+<p><img src="plots/sexual_vs_genoPC_unstand.jpg" /></p>
 </div>
 </div>
 </div>
