@@ -1,6 +1,10 @@
-name: "GenomicPCA"
+name: "Anna E. Fürtjes"
 output_dir: "."
 navbar:
+  title: "Genomic PCA"
+  type: inverse
   left: 
    - text: "Home"
      href: index.html
+   - text: "Code"
+     href: 25082021_geneticPCA_explanation.html

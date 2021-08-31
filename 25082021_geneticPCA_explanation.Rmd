@@ -3,18 +3,17 @@ title: "Genomic PCA"
 author: "Anna Elisabeth Furtjes, King's College London"
 date: "26/08/2021"
 output:
-  prettydoc::html_pretty:
-    prettydoc::code_folding: show
+  html_document:
+    code_folding: show
     toc: yes
     toc_depth: 2
-    prettydoc::toc_float: yes
-    theme: leonids
-    highlight: github
+    toc_float: yes
+    theme: yeti
     includes:
       after_body: footer.html 
 ---
 
-
+$$\\[0.1in]$$
 
 ```{r setup, include=F,echo=F}
 require(knitr)
@@ -22,20 +21,37 @@ opts_knit$set(root.dir = "C:/Users/k1894405/OneDrive - King's College London/PhD
 knitr::opts_chunk$set(echo = TRUE, fig.align="center")
 ```
 
+
+***
+
+
 # Background and reasoning
 
 **Available data:**
-In the following analysis, we use freely available genome-wide association study (GWAS) summary statistics from [Linner et al. (2019)](https://doi.org/10.1038/s41588-018-0309-3) on risky behaviors . In this study, the authors performed GWAS on the propensity to speeding, alcohol consumption, smoking, and the number of self-reported sexual partners. In addition to the four traits, they extracted the first principal component (PC) of these four traits in a principal component analysis (PCA), and performed a GWAS on this first PC to create a summary of overall risky behaviors. The summary statistics are available on https://www.thessgac.org/data .
+In the following analysis, we use freely available genome-wide association study (GWAS) summary statistics from [Linner et al. (2019)](https://doi.org/10.1038/s41588-018-0309-3) on risky behaviors . In this study, the authors performed GWAS on the propensity to speeding, alcohol consumption, smoking, and the number of self-reported sexual partners. In addition to the four traits, they extracted the first principal component (PC) of these four traits in a principal component analysis (PCA), and performed a GWAS on this first PC to create a summary of overall risky behaviors. The summary statistics are available on https://www.thessgac.org/data . The GWAS summary statistics for ever smoking status were derived from UKB as well as TAG, whereas all the others (including the PC sumstats) were obtained from UKB only.
 
-_The GWAS summary statistics for ever smoking status were derived from UKB as well as TAG, whereas all the others (including the PC sumstats) were obtained from UKB only._
+<br>
 
 **Aim of the analysis:**
 Using Linner's summary statistics of speeding, drinking, smoking and sexual partners, we will perform linkage disequilibirum score regression (LDSC) and obtain the genetic correlation matrix from the four risky behaviors in Linner et al. (2019). Using PCA, we will extract the first PC from this genetic correlation matrix. Resulting standardised PC loadings will be used to weight SNP effects (z-scores) contributed by the four risky behaviors. We have modified the R package provided by [Baselman et al. (2019)](https://www.ncbi.nlm.nih.gov/pubmed/30643256) to create our genetic PC sumstats while allowing to correct for sample overlap. 
+
+<br>
+
 
 **Validation of the resulting genetic PC sumstats:**
 
 To validate the results, we will compare SNP effects from Linner's phenotypic PC GWAS with effect sizes extracted in our analysis. A perfect correlation between our genetic PC sumstats that we created using summary statistics only (called *genetic PCA* in this document) and the PC sumstats would indicate that we captured the same effects as Linner et al. obtained in their PCA with *phenotypic* data.
 Validating the resulting genetic PC sumstats serves as a sanity check and is crucial as, to our knowledge, this kind of approach is unprecedented.
+
+
+*** 
+
+
+
+$$\\[0.01in]$$
+
+
+
 
 # Procedure 
 
@@ -329,14 +345,16 @@ values<-cbind(c("1st PC","2nd PC","3rd PC","4th PC"),eigenvalues,explained_varia
 kable(values, caption="Eigenvalues and explained variance (%)", col.names = c("PC","Eigenvalues","Explained variance"))
 ```
 
-### Standardised loadings
+<br>
+
+### Standardised PC loadings
 
 We standardise the eigenvectors with the eigenvalues, in order to obtain standardised PC loadings.
 
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/standardise_loadings.PNG){ width=40% }
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/standardise_loadings.PNG){ width=40% }
 
-
+<br>
 
 The PC loadings from our genetic __correlation__ matrix are:
 ```{r print_loadings, results="asis",echo=FALSE}
@@ -356,6 +374,9 @@ write_matrix(matrix_print)
 ## C. Create genetic PC sumstats
 
 We format the files as expected by the `multivariate_GWAMA()` function by Baselman et al. (2019). It expects exactly nine columns (SNPID,CHR,BP,EA,OA,EAF,N,Z,P) and that effect sizes must be z scores. We modified the function from Baselman et al. as displayed below in order to create our genetic PC sumstats.
+
+<br>
+
 
 ### Step 1: Format the risky behaviors sumstats
 
@@ -435,10 +456,11 @@ for(i in 1:nrow(all_files)){
 
 ```
 
+<br>
 
 ### Step 2: Modify GWAMA function
 
-![](C:/Users/k1894405/OneDrive - King's College London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/Baselman_equation.PNG){ width=45% }
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/Baselman_equation.PNG){ width=45% }
 
 Baselman et al. (2019) implemeted the equation above. We replace the weights in their equation, the square root of N times the heritability, with standardised PC loadings times the square root of N: 
 
@@ -477,6 +499,8 @@ w = t(t(sqrt(N))*h2)
 sqrt_W<-w
 ```
 
+
+<br>
 
 ### Step 3: Run modified function
 ```{r calculate_GWAMA, eval=F,echo=T}

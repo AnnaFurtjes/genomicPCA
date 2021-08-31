@@ -8,7 +8,6 @@
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <meta name="author" content="Anna Elisabeth Furtjes, King’s College London" />
 
@@ -16,107 +15,278 @@
 <title>Genomic PCA</title>
 
 <script src="site_libs/header-attrs-2.10/header-attrs.js"></script>
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/yeti.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
 <style type="text/css">code{white-space: pre;}</style>
-<style type="text/css" data-origin="pandoc">
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-    color: #aaaaaa;
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
   }
-pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code span.at { color: #7d9029; } /* Attribute */
-code span.bn { color: #40a070; } /* BaseN */
-code span.bu { } /* BuiltIn */
-code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code span.ch { color: #4070a0; } /* Char */
-code span.cn { color: #880000; } /* Constant */
-code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code span.dt { color: #902000; } /* DataType */
-code span.dv { color: #40a070; } /* DecVal */
-code span.er { color: #ff0000; font-weight: bold; } /* Error */
-code span.ex { } /* Extension */
-code span.fl { color: #40a070; } /* Float */
-code span.fu { color: #06287e; } /* Function */
-code span.im { } /* Import */
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code span.op { color: #666666; } /* Operator */
-code span.ot { color: #007020; } /* Other */
-code span.pp { color: #bc7a00; } /* Preprocessor */
-code span.sc { color: #4070a0; } /* SpecialChar */
-code span.ss { color: #bb6688; } /* SpecialString */
-code span.st { color: #4070a0; } /* String */
-code span.va { color: #19177c; } /* Variable */
-code span.vs { color: #4070a0; } /* VerbatimString */
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-
-/* A workaround for https://github.com/jgm/pandoc/issues/4278 */
-a.sourceLine {
-  pointer-events: auto;
-}
-
-</style>
-<script>
-// apply pandoc div.sourceCode style to pre.sourceCode instead
-(function() {
-  var sheets = document.styleSheets;
-  for (var i = 0; i < sheets.length; i++) {
-    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
-    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
-      var rule = rules[j];
-      // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
-      var style = rule.style.cssText;
-      // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
-      // replace div.sourceCode by a pre.sourceCode rule
-      sheets[i].deleteRule(j);
-      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
-    }
-  }
-})();
 </script>
 
 
 
-<link rel="stylesheet" href="25082021_geneticPCA_explanation_files/style.css" type="text/css" />
 
 
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
 
 
 
@@ -125,45 +295,78 @@ a.sourceLine {
 <body>
 
 
+<div class="container-fluid main-container">
 
 
+<!-- setup 3col/9col grid for toc_float and main content  -->
 <div class="row">
-<div class="col s12 m3">
-<div class="table cover">
-<div class="cover-card table-cell table-middle">
-<span class="author_name">Genomic PCA</span>
-<span class="author_bio mbm">Anna Elisabeth Furtjes, King’s College London</span>
-<span class="author_bio mbm">26/08/2021</span>
-</div>
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
 </div>
 </div>
 
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
 
-<div class="col s12 m9">
-<div class="post-listing">
-<div id="TOC" class="toc">
-<ul>
-<li><a href="#background-and-reasoning">Background and reasoning</a></li>
-<li><a href="#procedure">Procedure</a>
-<ul>
-<li><a href="#a.-obtain-genetic-correlation-matrix">A. Obtain genetic correlation matrix</a></li>
-<li><a href="#b.-principal-component-analysis">B. Principal Component Analysis</a></li>
-<li><a href="#c.-create-genetic-pc-sumstats">C. Create genetic PC sumstats</a></li>
-</ul></li>
-<li><a href="#evaluate-results">Evaluate results</a></li>
-<li><a href="#alternative-procedure">Alternative procedure</a></li>
+
+
+
+<div class="navbar navbar-inverse  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Genomic PCA</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="25082021_geneticPCA_explanation.html">Code</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
 </ul>
 </div>
 
-<div id="post">
-<article class="post-content">
+
+
+<h1 class="title toc-ignore">Genomic PCA</h1>
+<h4 class="author">Anna Elisabeth Furtjes, King’s College London</h4>
+<h4 class="date">26/08/2021</h4>
+
+</div>
+
+
+<p><span class="math display">\[\\[0.1in]\]</span></p>
+<hr />
 <div id="background-and-reasoning" class="section level1">
 <h1>Background and reasoning</h1>
-<p><strong>Available data:</strong> In the following analysis, we use freely available genome-wide association study (GWAS) summary statistics from <a href="https://doi.org/10.1038/s41588-018-0309-3">Linner et al. (2019)</a> on risky behaviors . In this study, the authors performed GWAS on the propensity to speeding, alcohol consumption, smoking, and the number of self-reported sexual partners. In addition to the four traits, they extracted the first principal component (PC) of these four traits in a principal component analysis (PCA), and performed a GWAS on this first PC to create a summary of overall risky behaviors. The summary statistics are available on <a href="https://www.thessgac.org/data" class="uri">https://www.thessgac.org/data</a> .</p>
-<p><em>The GWAS summary statistics for ever smoking status were derived from UKB as well as TAG, whereas all the others (including the PC sumstats) were obtained from UKB only.</em></p>
+<p><strong>Available data:</strong> In the following analysis, we use freely available genome-wide association study (GWAS) summary statistics from <a href="https://doi.org/10.1038/s41588-018-0309-3">Linner et al. (2019)</a> on risky behaviors . In this study, the authors performed GWAS on the propensity to speeding, alcohol consumption, smoking, and the number of self-reported sexual partners. In addition to the four traits, they extracted the first principal component (PC) of these four traits in a principal component analysis (PCA), and performed a GWAS on this first PC to create a summary of overall risky behaviors. The summary statistics are available on <a href="https://www.thessgac.org/data" class="uri">https://www.thessgac.org/data</a> . The GWAS summary statistics for ever smoking status were derived from UKB as well as TAG, whereas all the others (including the PC sumstats) were obtained from UKB only.</p>
+<p><br></p>
 <p><strong>Aim of the analysis:</strong> Using Linner’s summary statistics of speeding, drinking, smoking and sexual partners, we will perform linkage disequilibirum score regression (LDSC) and obtain the genetic correlation matrix from the four risky behaviors in Linner et al. (2019). Using PCA, we will extract the first PC from this genetic correlation matrix. Resulting standardised PC loadings will be used to weight SNP effects (z-scores) contributed by the four risky behaviors. We have modified the R package provided by <a href="https://www.ncbi.nlm.nih.gov/pubmed/30643256">Baselman et al. (2019)</a> to create our genetic PC sumstats while allowing to correct for sample overlap.</p>
+<p><br></p>
 <p><strong>Validation of the resulting genetic PC sumstats:</strong></p>
 <p>To validate the results, we will compare SNP effects from Linner’s phenotypic PC GWAS with effect sizes extracted in our analysis. A perfect correlation between our genetic PC sumstats that we created using summary statistics only (called <em>genetic PCA</em> in this document) and the PC sumstats would indicate that we captured the same effects as Linner et al. obtained in their PCA with <em>phenotypic</em> data. Validating the resulting genetic PC sumstats serves as a sanity check and is crucial as, to our knowledge, this kind of approach is unprecedented.</p>
+<hr />
+<p><span class="math display">\[\\[0.01in]\]</span></p>
 </div>
 <div id="procedure" class="section level1">
 <h1>Procedure</h1>
@@ -172,103 +375,103 @@ a.sourceLine {
 <p>After downloading the summary statistics, we use the genomic SEM package in R to pre-process and munge the files (<a href="https://www.nature.com/articles/s41562-019-0566-x">Grotzinger et al., 2019</a>). We perform LDSC to obtain a genetic correlation matrix.</p>
 <div id="step-1-prepare-and-munge-files" class="section level3">
 <h3>Step 1: Prepare and munge files</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(devtools)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GenomicSEM)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(psych)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># set work directory to where raw GWAS are stored</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_raw&quot;</span>))</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># list all files in this directory, only first four are the risky behaviors</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>gwas_files<span class="ot">&lt;-</span><span class="fu">list.files</span>()</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>gwas_files<span class="ot">&lt;-</span>gwas_files[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">#load all files listed in gwas_files</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(gwas_files)) <span class="fu">assign</span>(gwas_files[i],<span class="fu">fread</span>(gwas_files[i],<span class="at">header=</span>T,<span class="at">data.table=</span>F))</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># double check which files were loaded in </span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span>(<span class="at">pattern=</span><span class="st">&quot;.txt&quot;</span>)</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># change column names &amp;</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co"># set wd to the directory the files with the new names should be saved</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_header&quot;</span>))</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> gwas_files){</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>file<span class="ot">&lt;-</span><span class="fu">get</span>(i)</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">dim</span>(file))</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(file))</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(file)<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;SNP&quot;</span>,<span class="st">&quot;CHR&quot;</span>,<span class="st">&quot;POS&quot;</span>,<span class="st">&quot;A1&quot;</span>,<span class="st">&quot;A2&quot;</span>,<span class="st">&quot;eaf_A1&quot;</span>,<span class="st">&quot;beta&quot;</span>,<span class="st">&quot;se&quot;</span>,<span class="st">&quot;p&quot;</span>)</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(file))</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="fu">fwrite</span>(file,<span class="at">file=</span>i, <span class="at">quote=</span><span class="cn">FALSE</span>,<span class="at">col.names=</span><span class="cn">TRUE</span>,<span class="at">row.names=</span>F,<span class="at">sep=</span><span class="st">&quot; &quot;</span>)</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="do">#################</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="do">## munge</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="do">#################</span></span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>files<span class="ot">&lt;-</span>gwas_files</span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="co"># as reference SNP list use 1000G reference genome (HapMap 3)</span></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="co"># wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>hm3<span class="ot">&lt;-</span><span class="st">&quot;w_hm3.noMHC.snplist.txt&quot;</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>trait.names<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;speeding&quot;</span>,<span class="st">&quot;drinking&quot;</span>,<span class="st">&quot;smoking&quot;</span>,<span class="st">&quot;sexual_partners&quot;</span>)</span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>N<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="dv">404291</span>,<span class="dv">414343</span>,<span class="dv">518633</span>,<span class="dv">370711</span>)</span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="fu">munge</span>(<span class="at">files=</span>files,</span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>      <span class="at">hm3=</span>hm3,</span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>      <span class="at">trait.names =</span> trait.names,</span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>      <span class="at">N=</span>N)</span></code></pre></div>
+<pre class="r"><code>library(data.table)
+library(devtools)
+library(GenomicSEM)
+library(knitr)
+library(psych)
+# set work directory to where raw GWAS are stored
+setwd(paste0(getwd(),&quot;/GWAS_raw&quot;))
+
+# list all files in this directory, only first four are the risky behaviors
+gwas_files&lt;-list.files()
+gwas_files&lt;-gwas_files[1:4]
+
+#load all files listed in gwas_files
+for (i in 1:length(gwas_files)) assign(gwas_files[i],fread(gwas_files[i],header=T,data.table=F))
+
+# double check which files were loaded in 
+ls(pattern=&quot;.txt&quot;)
+
+# change column names &amp;
+# set wd to the directory the files with the new names should be saved
+setwd(paste0(getwd(),&quot;/GWAS_header&quot;))
+
+for(i in gwas_files){
+file&lt;-get(i)
+print(dim(file))
+print(head(file))
+names(file)&lt;-c(&quot;SNP&quot;,&quot;CHR&quot;,&quot;POS&quot;,&quot;A1&quot;,&quot;A2&quot;,&quot;eaf_A1&quot;,&quot;beta&quot;,&quot;se&quot;,&quot;p&quot;)
+print(head(file))
+fwrite(file,file=i, quote=FALSE,col.names=TRUE,row.names=F,sep=&quot; &quot;)
+}
+
+#################
+## munge
+#################
+files&lt;-gwas_files
+
+# as reference SNP list use 1000G reference genome (HapMap 3)
+# wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2
+hm3&lt;-&quot;w_hm3.noMHC.snplist.txt&quot;
+
+trait.names&lt;-c(&quot;speeding&quot;,&quot;drinking&quot;,&quot;smoking&quot;,&quot;sexual_partners&quot;)
+
+N&lt;-c(404291,414343,518633,370711)
+
+munge(files=files,
+      hm3=hm3,
+      trait.names = trait.names,
+      N=N)</code></pre>
 </div>
 <div id="step-2-perform-linkage-disequilibrium-score-regression-ldsc" class="section level3">
 <h3>Step 2: Perform linkage disequilibrium score regression (LDSC)</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># download and unpack SNP weights: </span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># wget https://data.broadinstitute.org/alkesgroup/LDSCORE/eur_w_ld_chr.tar.bz2</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># tar -jxvf eur_w_ld_chr.tar.bz2</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># download software to unzip .tar document on windows</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="do">##############################################################</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># setwd to munged files</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_munged&quot;</span>))</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># specifications for ldsc function</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>traits<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;speeding.sumstats.gz&quot;</span>,<span class="st">&quot;drinking.sumstats.gz&quot;</span>,<span class="st">&quot;smoking.sumstats.gz&quot;</span>,<span class="st">&quot;sexual_partners.sumstats.gz&quot;</span>)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>ld<span class="ot">&lt;-</span> <span class="st">&quot;eur_w_ld_chr/&quot;</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>wld<span class="ot">&lt;-</span> <span class="st">&quot;eur_w_ld_chr/&quot;</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>trait.names<span class="ot">&lt;-</span><span class="fu">str_remove</span>(traits, <span class="at">pattern =</span> <span class="st">&quot;.sumstats.gz&quot;</span>)</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>sample.prev<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="cn">NA</span>,<span class="cn">NA</span>,.<span class="dv">59</span>,<span class="cn">NA</span>)</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co"># https://bmjopen.bmj.com/content/4/12/e005663 </span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co"># this paper says that 50% of population had never smoked (but they use UKB ...?)</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co"># difficult to find papers on ever smoked rather than regular smokers</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>population.prev<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="cn">NA</span>,<span class="cn">NA</span>,.<span class="dv">5</span>,<span class="cn">NA</span>)</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>LDSCoutput_risk_taking<span class="ot">&lt;-</span><span class="fu">ldsc</span>(<span class="at">traits=</span>traits,</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>                             <span class="at">sample.prev=</span>sample.prev,</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>                             <span class="at">population.prev=</span>population.prev,</span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>                             <span class="at">ld=</span>ld,<span class="at">wld=</span>wld,</span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>                             <span class="at">trait.names =</span> trait.names,</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>                             <span class="at">stand =</span> T)</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">#LDSCoutput_risk_taking$S is going to be the covariance matrix</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">#LDSCoutput_risk_taking$V is the sampling covariance matrix as expected by Lavaan</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(LDSCoutput_risk_taking, <span class="at">file=</span><span class="st">&quot;risk_taking_stand.RData&quot;</span>)</span></code></pre></div>
+<pre class="r"><code># download and unpack SNP weights: 
+# wget https://data.broadinstitute.org/alkesgroup/LDSCORE/eur_w_ld_chr.tar.bz2
+# tar -jxvf eur_w_ld_chr.tar.bz2
+# download software to unzip .tar document on windows
+##############################################################
+# setwd to munged files
+setwd(paste0(getwd(),&quot;/GWAS_munged&quot;))
+
+library(stringr)
+
+# specifications for ldsc function
+traits&lt;-c(&quot;speeding.sumstats.gz&quot;,&quot;drinking.sumstats.gz&quot;,&quot;smoking.sumstats.gz&quot;,&quot;sexual_partners.sumstats.gz&quot;)
+ld&lt;- &quot;eur_w_ld_chr/&quot;
+wld&lt;- &quot;eur_w_ld_chr/&quot;
+trait.names&lt;-str_remove(traits, pattern = &quot;.sumstats.gz&quot;)
+sample.prev&lt;-c(NA,NA,.59,NA)
+
+# https://bmjopen.bmj.com/content/4/12/e005663 
+# this paper says that 50% of population had never smoked (but they use UKB ...?)
+# difficult to find papers on ever smoked rather than regular smokers
+population.prev&lt;-c(NA,NA,.5,NA)
+
+LDSCoutput_risk_taking&lt;-ldsc(traits=traits,
+                             sample.prev=sample.prev,
+                             population.prev=population.prev,
+                             ld=ld,wld=wld,
+                             trait.names = trait.names,
+                             stand = T)
+
+#LDSCoutput_risk_taking$S is going to be the covariance matrix
+#LDSCoutput_risk_taking$V is the sampling covariance matrix as expected by Lavaan
+save(LDSCoutput_risk_taking, file=&quot;risk_taking_stand.RData&quot;)</code></pre>
 </div>
 <div id="step-3-display-genetic-correlation-matrix" class="section level3">
 <h3>Step 3: Display genetic correlation matrix</h3>
-<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap-1.png" style="display: block; margin: auto;" /></p>
+<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="sanity-check" class="section level3">
 <h3><strong>Sanity check:</strong></h3>
 <p>To validate our correlation matrix, we contacted Linner et al. (2019) who shared their LDSC results: They found very similar genetic correlations between the four risky behaviors using LDSC and we suggest that our pre-processing was successful.</p>
-<p><img src="25082021_geneticPCA_explanation_files/figure-html/Linners_rg-1.png" style="display: block; margin: auto;" /></p>
+<p><img src="25082021_geneticPCA_explanation_files/figure-html/Linners_rg-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="ldsc-intercepts" class="section level3">
 <h3>LDSC intercepts</h3>
 <p>LDSC intercepts quantify sample overlap and other confounding factors (such as phenotypic correlation and population stratification) between the four risky behaviors we are analysing here.</p>
-<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_intercept_four_traits-1.png" style="display: block; margin: auto;" /></p>
+<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_intercept_four_traits-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p><br></p>
 <hr />
 </div>
@@ -281,8 +484,8 @@ a.sourceLine {
 </div>
 <div id="eigenvectors" class="section level3">
 <h3>Eigenvectors</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#extract eigenvectors and eigenvalues</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>eigenvectors<span class="ot">&lt;-</span><span class="fu">round</span>(<span class="fu">eigen</span>(cormatrix)<span class="sc">$</span>vectors,<span class="at">digits=</span><span class="dv">3</span>)</span></code></pre></div>
+<pre class="r"><code>#extract eigenvectors and eigenvalues
+eigenvectors&lt;-round(eigen(cormatrix)$vectors,digits=3)</code></pre>
 <p><span class="math display">\[\begin{bmatrix}
 0.37&amp;0.853&amp;0.249&amp;-0.27 \\
 0.498&amp;0.094&amp;-0.837&amp;0.206 \\
@@ -292,11 +495,11 @@ a.sourceLine {
 </div>
 <div id="eigenvalues-and-explained-variance" class="section level3">
 <h3>Eigenvalues and explained variance</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>eigenvalues<span class="ot">&lt;-</span><span class="fu">round</span>(<span class="fu">eigen</span>(cormatrix)<span class="sc">$</span>values,<span class="at">digits =</span> <span class="dv">3</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>explained_variance<span class="ot">&lt;-</span><span class="fu">round</span>(eigenvalues<span class="sc">/</span><span class="fu">sum</span>(eigenvalues)<span class="sc">*</span><span class="dv">100</span>,<span class="at">digits =</span> <span class="dv">3</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>values<span class="ot">&lt;-</span><span class="fu">cbind</span>(<span class="fu">c</span>(<span class="st">&quot;1st PC&quot;</span>,<span class="st">&quot;2nd PC&quot;</span>,<span class="st">&quot;3rd PC&quot;</span>,<span class="st">&quot;4th PC&quot;</span>),eigenvalues,explained_variance)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(values, <span class="at">caption=</span><span class="st">&quot;Eigenvalues and explained variance (%)&quot;</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;PC&quot;</span>,<span class="st">&quot;Eigenvalues&quot;</span>,<span class="st">&quot;Explained variance&quot;</span>))</span></code></pre></div>
+<pre class="r"><code>eigenvalues&lt;-round(eigen(cormatrix)$values,digits = 3)
+explained_variance&lt;-round(eigenvalues/sum(eigenvalues)*100,digits = 3)
+library(knitr)
+values&lt;-cbind(c(&quot;1st PC&quot;,&quot;2nd PC&quot;,&quot;3rd PC&quot;,&quot;4th PC&quot;),eigenvalues,explained_variance)
+kable(values, caption=&quot;Eigenvalues and explained variance (%)&quot;, col.names = c(&quot;PC&quot;,&quot;Eigenvalues&quot;,&quot;Explained variance&quot;))</code></pre>
 <table>
 <caption>Eigenvalues and explained variance (%)</caption>
 <thead>
@@ -329,11 +532,13 @@ a.sourceLine {
 </tr>
 </tbody>
 </table>
+<p><br></p>
 </div>
-<div id="standardised-loadings" class="section level3">
-<h3>Standardised loadings</h3>
+<div id="standardised-pc-loadings" class="section level3">
+<h3>Standardised PC loadings</h3>
 <p>We standardise the eigenvectors with the eigenvalues, in order to obtain standardised PC loadings.</p>
-<p><img src="C:/Users/k1894405/OneDrive%20-%20King&#39;s%20College%20London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/standardise_loadings.PNG" style="width:40.0%" /></p>
+<p><img src="standardise_loadings.PNG" style="width:40.0%" /></p>
+<p><br></p>
 <p>The PC loadings from our genetic <strong>correlation</strong> matrix are: <span class="math display">\[\begin{bmatrix}
 0.523&amp;0.808&amp;0.206&amp;-0.176 \\
 0.704&amp;0.089&amp;-0.693&amp;0.134 \\
@@ -347,84 +552,86 @@ a.sourceLine {
 <div id="c.-create-genetic-pc-sumstats" class="section level2">
 <h2>C. Create genetic PC sumstats</h2>
 <p>We format the files as expected by the <code>multivariate_GWAMA()</code> function by Baselman et al. (2019). It expects exactly nine columns (SNPID,CHR,BP,EA,OA,EAF,N,Z,P) and that effect sizes must be z scores. We modified the function from Baselman et al. as displayed below in order to create our genetic PC sumstats.</p>
+<p><br></p>
 <div id="step-1-format-the-risky-behaviors-sumstats" class="section level3">
 <h3>Step 1: Format the risky behaviors sumstats</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_header&quot;</span>))</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># read in gwas files</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>gwas_files<span class="ot">&lt;-</span><span class="fu">list.files</span>()</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>gwas_files<span class="ot">&lt;-</span>gwas_files[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(gwas_files)) <span class="fu">assign</span>(gwas_files[i],<span class="fu">fread</span>(gwas_files[i],<span class="at">header=</span>T,<span class="at">data.table=</span>F))</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span>(<span class="at">pattern=</span><span class="st">&quot;.txt&quot;</span>)</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># generate N column</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>AUTOMOBILE_SPEEDING_PROPENSITY_GWAS.txt<span class="sc">$</span>N<span class="ot">&lt;-</span><span class="dv">404291</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>DRINKS_PER_WEEK_GWAS.txt<span class="sc">$</span>N<span class="ot">&lt;-</span><span class="dv">414343</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>EVER_SMOKER_GWAS_MA_UKB_TAG.txt<span class="sc">$</span>N<span class="ot">&lt;-</span><span class="dv">518633</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>NUMBER_SEXUAL_PARTNERS_GWAS.txt<span class="sc">$</span>N<span class="ot">&lt;-</span><span class="dv">370711</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co"># the following loop does:</span></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="co"># restrict file to HapMap SNPs contained in munged GWAS (but make sure EAF taken from reference file is correct by comparing EA in ref and munged files)</span></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co"># transform beta into z-scores</span></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="co"># z-score=beta/stand_error # https://www.biostars.org/p/140292/</span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="co"># re-name columns and include only the 9 columns needed by the function</span></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co"># list reference files that contain info on BP, CHR and P (that the munged files don&#39;t contain)</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_header&quot;</span>))</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>ref_files<span class="ot">&lt;-</span><span class="fu">list.files</span>()[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>all_files <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(ref_files, <span class="at">munged_files =</span> <span class="fu">c</span>(<span class="st">&quot;speeding.sumstats.gz&quot;</span>,<span class="st">&quot;drinking.sumstats.gz&quot;</span>,<span class="st">&quot;smoking.sumstats.gz&quot;</span>,<span class="st">&quot;sexual_partners.sumstats.gz&quot;</span>))</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(all_files)){</span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># read in munged file</span></span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_munged&quot;</span>))</span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>  munged_file<span class="ot">&lt;-</span><span class="fu">fread</span>(<span class="fu">as.character</span>(all_files<span class="sc">$</span>munged_files[i]),<span class="at">header=</span>T,<span class="at">data.table=</span>F)</span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>  <span class="co"># read in ref file</span></span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_header&quot;</span>))</span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>  ref_file<span class="ot">&lt;-</span><span class="fu">fread</span>(<span class="fu">as.character</span>(all_files<span class="sc">$</span>ref_files[i]),<span class="at">header=</span>T,<span class="at">data.table=</span>F)</span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>  <span class="co"># format ref file</span></span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">names</span>(ref_file)[<span class="fu">which</span>(<span class="fu">names</span>(ref_file)<span class="sc">==</span><span class="st">&quot;POS&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;BP&quot;</span></span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">names</span>(ref_file)[<span class="fu">which</span>(<span class="fu">names</span>(ref_file)<span class="sc">==</span><span class="st">&quot;eaf_A1&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;EAF_A1_prelim&quot;</span></span>
-<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">names</span>(ref_file)[<span class="fu">which</span>(<span class="fu">names</span>(ref_file)<span class="sc">==</span><span class="st">&quot;p&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;P&quot;</span></span>
-<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># A1 is the effect allele according to Linner website</span></span>
-<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    <span class="fu">names</span>(ref_file)[<span class="fu">which</span>(<span class="fu">names</span>(ref_file)<span class="sc">==</span><span class="st">&quot;A1&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;EA&quot;</span></span>
-<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">names</span>(ref_file)[<span class="fu">which</span>(<span class="fu">names</span>(ref_file)<span class="sc">==</span><span class="st">&quot;A2&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;OA&quot;</span></span>
-<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>  <span class="co"># only keep relevant columns from the reference file</span></span>
-<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>  ref_file<span class="ot">&lt;-</span>ref_file[,<span class="fu">c</span>(<span class="st">&quot;BP&quot;</span>,<span class="st">&quot;CHR&quot;</span>,<span class="st">&quot;SNP&quot;</span>,<span class="st">&quot;P&quot;</span>,<span class="st">&quot;EA&quot;</span>,<span class="st">&quot;EAF_A1_prelim&quot;</span>)]</span>
-<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>  <span class="co"># merge munged and ref file</span></span>
-<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>  merged_file<span class="ot">&lt;-</span><span class="fu">merge</span>(munged_file, ref_file, <span class="at">by=</span><span class="fu">c</span>(<span class="st">&quot;SNP&quot;</span>), <span class="at">all.x=</span>T)</span>
-<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create an effect allele frequency column that matches the allele used in the munged file (because we take the frequency from the reference file that might have flipped effect and other alleles)</span></span>
-<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>    merged_file<span class="sc">$</span>EAF<span class="ot">&lt;-</span><span class="fu">ifelse</span>(merged_file<span class="sc">$</span>A1 <span class="sc">==</span> merged_file<span class="sc">$</span>EA, merged_file<span class="sc">$</span>EAF_A1_prelim, <span class="dv">1</span><span class="sc">-</span>merged_file<span class="sc">$</span>EAF_A1_prelim)</span>
-<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>    <span class="co"># only keep required columns</span></span>
-<span id="cb5-59"><a href="#cb5-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">names</span>(merged_file)[<span class="fu">which</span>(<span class="fu">names</span>(merged_file) <span class="sc">==</span> <span class="st">&quot;SNP&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;SNPID&quot;</span></span>
-<span id="cb5-60"><a href="#cb5-60" aria-hidden="true" tabindex="-1"></a>    merged_file<span class="ot">&lt;-</span>merged_file[,<span class="fu">c</span>(<span class="st">&quot;SNPID&quot;</span>,<span class="st">&quot;CHR&quot;</span>,<span class="st">&quot;BP&quot;</span>,<span class="st">&quot;A1&quot;</span>,<span class="st">&quot;A2&quot;</span>,<span class="st">&quot;EAF&quot;</span>,<span class="st">&quot;N&quot;</span>,<span class="st">&quot;Z&quot;</span>,<span class="st">&quot;P&quot;</span>)]</span>
-<span id="cb5-61"><a href="#cb5-61" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-62"><a href="#cb5-62" aria-hidden="true" tabindex="-1"></a>    <span class="co"># name according to GWAMA expectations</span></span>
-<span id="cb5-63"><a href="#cb5-63" aria-hidden="true" tabindex="-1"></a>    <span class="co"># In genomicSEM A1 is the effect allele</span></span>
-<span id="cb5-64"><a href="#cb5-64" aria-hidden="true" tabindex="-1"></a>    <span class="fu">names</span>(merged_file)[<span class="fu">which</span>(<span class="fu">names</span>(merged_file) <span class="sc">==</span> <span class="st">&quot;A1&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;EA&quot;</span></span>
-<span id="cb5-65"><a href="#cb5-65" aria-hidden="true" tabindex="-1"></a>    <span class="fu">names</span>(merged_file)[<span class="fu">which</span>(<span class="fu">names</span>(merged_file) <span class="sc">==</span> <span class="st">&quot;A2&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;OA&quot;</span></span>
-<span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a>    <span class="co"># save formatted files</span></span>
-<span id="cb5-68"><a href="#cb5-68" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAMA_format&quot;</span>))</span>
-<span id="cb5-69"><a href="#cb5-69" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-70"><a href="#cb5-70" aria-hidden="true" tabindex="-1"></a>    ref_trait <span class="ot">&lt;-</span> <span class="fu">as.character</span>(all_files<span class="sc">$</span>ref_files[i])</span>
-<span id="cb5-71"><a href="#cb5-71" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fwrite</span>(merged_file,<span class="at">file=</span><span class="fu">paste0</span>(<span class="st">&quot;gwama_&quot;</span>,ref_trait), <span class="at">quote=</span><span class="cn">FALSE</span>,<span class="at">col.names=</span><span class="cn">TRUE</span>,<span class="at">row.names=</span>F,<span class="at">sep=</span><span class="st">&quot; &quot;</span>,<span class="at">na=</span><span class="st">&quot;NA&quot;</span>)</span>
-<span id="cb5-72"><a href="#cb5-72" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<pre class="r"><code>source(&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;)
+library(data.table)
+setwd(paste0(getwd(),&quot;/GWAS_header&quot;))
+
+# read in gwas files
+gwas_files&lt;-list.files()
+gwas_files&lt;-gwas_files[1:4]
+
+for (i in 1:length(gwas_files)) assign(gwas_files[i],fread(gwas_files[i],header=T,data.table=F))
+ls(pattern=&quot;.txt&quot;)
+
+# generate N column
+AUTOMOBILE_SPEEDING_PROPENSITY_GWAS.txt$N&lt;-404291
+DRINKS_PER_WEEK_GWAS.txt$N&lt;-414343
+EVER_SMOKER_GWAS_MA_UKB_TAG.txt$N&lt;-518633
+NUMBER_SEXUAL_PARTNERS_GWAS.txt$N&lt;-370711
+  
+# the following loop does:
+# restrict file to HapMap SNPs contained in munged GWAS (but make sure EAF taken from reference file is correct by comparing EA in ref and munged files)
+# transform beta into z-scores
+# z-score=beta/stand_error # https://www.biostars.org/p/140292/
+# re-name columns and include only the 9 columns needed by the function
+
+# list reference files that contain info on BP, CHR and P (that the munged files don&#39;t contain)
+setwd(paste0(getwd(),&quot;/GWAS_header&quot;))
+ref_files&lt;-list.files()[1:4]
+
+all_files &lt;- data.frame(ref_files, munged_files = c(&quot;speeding.sumstats.gz&quot;,&quot;drinking.sumstats.gz&quot;,&quot;smoking.sumstats.gz&quot;,&quot;sexual_partners.sumstats.gz&quot;))
+
+
+for(i in 1:nrow(all_files)){
+  # read in munged file
+  setwd(paste0(getwd(),&quot;/GWAS_munged&quot;))
+  munged_file&lt;-fread(as.character(all_files$munged_files[i]),header=T,data.table=F)
+  
+  # read in ref file
+  setwd(paste0(getwd(),&quot;/GWAS_header&quot;))
+  ref_file&lt;-fread(as.character(all_files$ref_files[i]),header=T,data.table=F)
+  
+  # format ref file
+    names(ref_file)[which(names(ref_file)==&quot;POS&quot;)]&lt;-&quot;BP&quot;
+    names(ref_file)[which(names(ref_file)==&quot;eaf_A1&quot;)]&lt;-&quot;EAF_A1_prelim&quot;
+    names(ref_file)[which(names(ref_file)==&quot;p&quot;)]&lt;-&quot;P&quot;
+    # A1 is the effect allele according to Linner website
+    names(ref_file)[which(names(ref_file)==&quot;A1&quot;)]&lt;-&quot;EA&quot;
+    names(ref_file)[which(names(ref_file)==&quot;A2&quot;)]&lt;-&quot;OA&quot;
+
+    
+  # only keep relevant columns from the reference file
+  ref_file&lt;-ref_file[,c(&quot;BP&quot;,&quot;CHR&quot;,&quot;SNP&quot;,&quot;P&quot;,&quot;EA&quot;,&quot;EAF_A1_prelim&quot;)]
+  
+  # merge munged and ref file
+  merged_file&lt;-merge(munged_file, ref_file, by=c(&quot;SNP&quot;), all.x=T)
+  
+  # create an effect allele frequency column that matches the allele used in the munged file (because we take the frequency from the reference file that might have flipped effect and other alleles)
+    merged_file$EAF&lt;-ifelse(merged_file$A1 == merged_file$EA, merged_file$EAF_A1_prelim, 1-merged_file$EAF_A1_prelim)
+    
+    # only keep required columns
+    names(merged_file)[which(names(merged_file) == &quot;SNP&quot;)]&lt;-&quot;SNPID&quot;
+    merged_file&lt;-merged_file[,c(&quot;SNPID&quot;,&quot;CHR&quot;,&quot;BP&quot;,&quot;A1&quot;,&quot;A2&quot;,&quot;EAF&quot;,&quot;N&quot;,&quot;Z&quot;,&quot;P&quot;)]
+    
+    # name according to GWAMA expectations
+    # In genomicSEM A1 is the effect allele
+    names(merged_file)[which(names(merged_file) == &quot;A1&quot;)]&lt;-&quot;EA&quot;
+    names(merged_file)[which(names(merged_file) == &quot;A2&quot;)]&lt;-&quot;OA&quot;
+    
+    # save formatted files
+    setwd(paste0(getwd(),&quot;/GWAMA_format&quot;))
+
+    ref_trait &lt;- as.character(all_files$ref_files[i])
+    fwrite(merged_file,file=paste0(&quot;gwama_&quot;,ref_trait), quote=FALSE,col.names=TRUE,row.names=F,sep=&quot; &quot;,na=&quot;NA&quot;)
+}</code></pre>
+<p><br></p>
 </div>
 <div id="step-2-modify-gwama-function" class="section level3">
 <h3>Step 2: Modify GWAMA function</h3>
-<p><img src="C:/Users/k1894405/OneDrive%20-%20King&#39;s%20College%20London/PhD/genomic_pca_simulation_started_Jan2020/Rmarkdown/Baselman_equation.PNG" style="width:45.0%" /></p>
+<p><img src="Baselman_equation.PNG" style="width:45.0%" /></p>
 <p>Baselman et al. (2019) implemeted the equation above. We replace the weights in their equation, the square root of N times the heritability, with standardised PC loadings times the square root of N:</p>
 <p>Change <code>w = sqrt(N*h2)</code>to <code>w = sqrt(N)*standardised_loadings</code></p>
 <p>If we only replace heritabilities with standardised loadings in the arguments of the function, we will get errors for two reasons:</p>
@@ -435,83 +642,84 @@ a.sourceLine {
 <p>I have made the following changes to address these problems:</p>
 <div id="disable-sanity-check-for-negative-heritabilites" class="section level4">
 <h4>1) Disable sanity check for negative heritabilites:</h4>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>my_GWAMA<span class="ot">&lt;-</span>multivariate_GWAMA</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">trace</span>(my_GWAMA,<span class="at">edit=</span>T)</span></code></pre></div>
+<pre class="r"><code>source(&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;)
+my_GWAMA&lt;-multivariate_GWAMA
+trace(my_GWAMA,edit=T)</code></pre>
 <p>I deleted <em>lines 217-221</em>, which disables the sanity check to stop the function from running when loadings are not in the expected h2 format (h2&lt;0 &amp; h2&gt;1).</p>
 </div>
 <div id="modify-code-to-calculate-our-weights" class="section level4">
 <h4>2) Modify code to calculate our weights</h4>
 <p><strong>Original code:</strong></p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># line 663</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>W<span class="ot">&lt;-</span><span class="fu">t</span>(<span class="fu">t</span>(N) <span class="sc">*</span> h2)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># line 665</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>sqrt_W<span class="ot">&lt;-</span><span class="fu">sqrt</span>(W)</span></code></pre></div>
+<pre class="r"><code># line 663
+W&lt;-t(t(N) * h2)
+# line 665
+sqrt_W&lt;-sqrt(W)</code></pre>
 <p><em>As we replace h2 with negative loadings, this code produces NaNs.</em></p>
 <p><strong>Modified code:</strong></p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>w <span class="ot">=</span> <span class="fu">t</span>(<span class="fu">t</span>(<span class="fu">sqrt</span>(N))<span class="sc">*</span>h2)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>sqrt_W<span class="ot">&lt;-</span>w</span></code></pre></div>
+<pre class="r"><code>w = t(t(sqrt(N))*h2)
+sqrt_W&lt;-w</code></pre>
+<p><br></p>
 </div>
 </div>
 <div id="step-3-run-modified-function" class="section level3">
 <h3>Step 3: Run modified function</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load dependencies</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">substring</span>(<span class="fu">getwd</span>(), <span class="at">first =</span> <span class="dv">1</span>, <span class="at">last =</span> <span class="dv">18</span>),<span class="st">&quot;Documents/GitHub/genomicPCA/scripts&quot;</span>))</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;my_GWAMA_26032020.R&quot;</span>)</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Make an empty list with length equal to the number of input files</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>dat<span class="ot">&lt;-</span><span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>)</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAMA_format&quot;</span>))</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>gwama_files<span class="ot">&lt;-</span><span class="fu">list.files</span>(<span class="at">pattern =</span> <span class="st">&quot;gwama_&quot;</span>)</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>all_files<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(gwama_files, <span class="at">file_names =</span> <span class="fu">c</span>(<span class="st">&quot;speeding&quot;</span>,<span class="st">&quot;drinking&quot;</span>,<span class="st">&quot;smoking&quot;</span>,<span class="st">&quot;sexual_partners&quot;</span>)))</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in the data </span></span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>n<span class="ot">&lt;-</span><span class="dv">0</span></span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(file <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(all_files)){</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  n<span class="ot">&lt;-</span>n<span class="sc">+</span><span class="dv">1</span></span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(n)</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  dat[[all_files<span class="sc">$</span>file_names[n]]]<span class="ot">&lt;-</span><span class="fu">fread</span>(all_files<span class="sc">$</span>gwama_files[n],<span class="at">data.table =</span> F)</span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="co"># load covariance matrix from LDSC</span></span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">substring</span>(<span class="fu">getwd</span>(), <span class="at">first =</span> <span class="dv">1</span>, <span class="at">last =</span> <span class="dv">18</span>),<span class="st">&quot;Documents/GitHub/genomicPCA/data&quot;</span>))</span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;risk_taking_stand.RData&quot;</span>)</span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="co"># select the matrix of LDSC intercepts </span></span>
-<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a><span class="co"># this matrix should be in the same order as data read into dat but I have added some code to specifically make sure they take the same order</span></span>
-<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>order<span class="ot">&lt;-</span><span class="fu">names</span>(dat)</span>
-<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>I)[[<span class="dv">1</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>I)[[<span class="dv">2</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>CTI<span class="ot">&lt;-</span><span class="fu">as.matrix</span>(LDSCoutput_risk_taking<span class="sc">$</span>I[order,order])</span>
-<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a><span class="co"># load correlation matrix</span></span>
-<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S_Stand)[[<span class="dv">1</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S_Stand)[[<span class="dv">2</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>cormatrix<span class="ot">&lt;-</span>LDSCoutput_risk_taking<span class="sc">$</span>S_Stand[order,order]</span>
-<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a><span class="co"># eigen decomposition</span></span>
-<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>eigenvectors<span class="ot">&lt;-</span><span class="fu">eigen</span>(cormatrix)<span class="sc">$</span>vectors</span>
-<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>eigenvalues<span class="ot">&lt;-</span><span class="fu">eigen</span>(cormatrix)<span class="sc">$</span>values</span>
-<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate standardised loadings</span></span>
-<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>loadings<span class="ot">&lt;-</span><span class="fu">as.vector</span>(eigenvectors<span class="sc">%*%</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(eigenvalues))[,<span class="dv">1</span>])</span>
-<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a><span class="co"># run my modified GWAMA function</span></span>
-<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a><span class="fu">my_GWAMA</span>(<span class="at">x=</span>dat,</span>
-<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a>          <span class="at">cov_Z=</span>CTI,</span>
-<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a>          <span class="at">h2=</span>loadings,</span>
-<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a>          <span class="at">out=</span><span class="st">&quot;.&quot;</span>,</span>
-<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a>          <span class="at">name=</span><span class="st">&quot;my_GWAMA_weights_26082021&quot;</span>,</span>
-<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a>          <span class="at">output_gz=</span>F,</span>
-<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a>          <span class="at">check_columns=</span>F)</span></code></pre></div>
+<pre class="r"><code># load dependencies
+source(&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;)
+library(data.table)
+library(stringr)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),&quot;Documents/GitHub/genomicPCA/scripts&quot;))
+source(&quot;my_GWAMA_26032020.R&quot;)
+
+
+# Make an empty list with length equal to the number of input files
+dat&lt;-vector(&quot;list&quot;)
+
+setwd(paste0(getwd(),&quot;/GWAMA_format&quot;))
+gwama_files&lt;-list.files(pattern = &quot;gwama_&quot;)
+all_files&lt;-as.data.frame(cbind(gwama_files, file_names = c(&quot;speeding&quot;,&quot;drinking&quot;,&quot;smoking&quot;,&quot;sexual_partners&quot;)))
+  
+# Read in the data 
+n&lt;-0
+for(file in 1:nrow(all_files)){
+  n&lt;-n+1
+  print(n)
+  dat[[all_files$file_names[n]]]&lt;-fread(all_files$gwama_files[n],data.table = F)
+}
+
+# load covariance matrix from LDSC
+setwd(paste0(substring(getwd(), first = 1, last = 18),&quot;Documents/GitHub/genomicPCA/data&quot;))
+load(&quot;risk_taking_stand.RData&quot;)
+
+# select the matrix of LDSC intercepts 
+# this matrix should be in the same order as data read into dat but I have added some code to specifically make sure they take the same order
+order&lt;-names(dat)
+dimnames(LDSCoutput_risk_taking$I)[[1]]&lt;-dimnames(LDSCoutput_risk_taking$S)[[2]]
+dimnames(LDSCoutput_risk_taking$I)[[2]]&lt;-dimnames(LDSCoutput_risk_taking$S)[[2]]
+CTI&lt;-as.matrix(LDSCoutput_risk_taking$I[order,order])
+
+# load correlation matrix
+dimnames(LDSCoutput_risk_taking$S_Stand)[[1]]&lt;-dimnames(LDSCoutput_risk_taking$S)[[2]]
+dimnames(LDSCoutput_risk_taking$S_Stand)[[2]]&lt;-dimnames(LDSCoutput_risk_taking$S)[[2]]
+cormatrix&lt;-LDSCoutput_risk_taking$S_Stand[order,order]
+
+# eigen decomposition
+eigenvectors&lt;-eigen(cormatrix)$vectors
+eigenvalues&lt;-eigen(cormatrix)$values
+
+# calculate standardised loadings
+loadings&lt;-as.vector(eigenvectors%*%sqrt(diag(eigenvalues))[,1])
+
+# run my modified GWAMA function
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+
+my_GWAMA(x=dat,
+          cov_Z=CTI,
+          h2=loadings,
+          out=&quot;.&quot;,
+          name=&quot;my_GWAMA_weights_26082021&quot;,
+          output_gz=F,
+          check_columns=F)</code></pre>
 <p>Running the function can take a while. It will create one file containing the genetic PC summary stats and a log file to keep track of operations.</p>
 <p>For example, the log file shows the number of total and significant SNPs:</p>
 <ol style="list-style-type: decimal">
@@ -532,99 +740,99 @@ a.sourceLine {
 <p>It is important to note that the directions indicated by the PC loadings are arbitrary and it would not change the signal contained in the statistics if we flipped the signs of the loadings as long as this is done consistently across all PC loadings. If negative PC loadings are obtained, one can weight the SNPs with negative PC loadings, but we suggest to scale the SNP effects in the most sensible direction to make results more intuitively interpretable.</p>
 <div id="prepare-and-munge-sumstats-for-ldsc" class="section level3">
 <h3>Prepare and munge sumstats for LDSC</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set work directory to where raw GWAS are stored</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_raw&quot;</span>))</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># store file name in gwas_file</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>gwas_file<span class="ot">&lt;-</span><span class="fu">list.files</span>(<span class="at">pattern=</span><span class="st">&quot;RISK_PC&quot;</span>)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># load into R</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>Risk_PC<span class="ot">&lt;-</span><span class="fu">fread</span>(gwas_file,<span class="at">header=</span>T,<span class="at">data.table =</span> F)</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co"># rename columns</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(Risk_PC)<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;SNP&quot;</span>,<span class="st">&quot;CHR&quot;</span>,<span class="st">&quot;POS&quot;</span>,<span class="st">&quot;A1&quot;</span>,<span class="st">&quot;A2&quot;</span>,<span class="st">&quot;eaf_A1&quot;</span>,<span class="st">&quot;beta&quot;</span>,<span class="st">&quot;se&quot;</span>,<span class="st">&quot;p&quot;</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="co"># and set wd to the directory I want to save the files with the new names</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="co"># write table </span></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="fu">fwrite</span>(Risk_PC,<span class="at">file=</span><span class="st">&quot;Risk_PC_GWAS.txt&quot;</span>, <span class="at">quote=</span><span class="cn">FALSE</span>,<span class="at">col.names=</span><span class="cn">TRUE</span>,<span class="at">row.names=</span>F,<span class="at">sep=</span><span class="st">&quot; &quot;</span>)</span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="co"># prepare GWAMA file #</span></span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="co"># set work directory to where GWAMA file is stored</span></span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a><span class="co"># store file name in gwas_file</span></span>
-<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>gwas_file<span class="ot">&lt;-</span><span class="fu">list.files</span>(<span class="at">pattern=</span><span class="st">&quot;weighted_GWAMA.results.txt&quot;</span>)</span>
-<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="co"># load into R</span></span>
-<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>GWAMA<span class="ot">&lt;-</span><span class="fu">fread</span>(gwas_file,<span class="at">header=</span>T,<span class="at">data.table =</span> F)</span>
-<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="co"># rename columns (rename N_eff into N so that GenomicSEM recognises it as N column)</span></span>
-<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(GWAMA)[<span class="fu">which</span>(<span class="fu">names</span>(GWAMA)<span class="sc">==</span><span class="st">&quot;N_eff&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;N&quot;</span></span>
-<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>GWAMA<span class="ot">&lt;-</span>GWAMA[,<span class="fu">c</span>(<span class="st">&quot;SNPID&quot;</span>,<span class="st">&quot;CHR&quot;</span>,<span class="st">&quot;BP&quot;</span>,<span class="st">&quot;EA&quot;</span>,<span class="st">&quot;OA&quot;</span>,<span class="st">&quot;EAF&quot;</span>,<span class="st">&quot;MAF&quot;</span>,<span class="st">&quot;N&quot;</span>,<span class="st">&quot;BETA&quot;</span>,<span class="st">&quot;SE&quot;</span>,<span class="st">&quot;Z&quot;</span>,<span class="st">&quot;p&quot;</span>)]</span>
-<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a><span class="co"># setwd to where you want to save GWAMA</span></span>
-<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="co"># write table </span></span>
-<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a><span class="fu">fwrite</span>(GWAMA,<span class="at">file=</span><span class="st">&quot;GWAMA_header.txt&quot;</span>, <span class="at">quote=</span><span class="cn">FALSE</span>,<span class="at">col.names=</span><span class="cn">TRUE</span>,<span class="at">row.names=</span>F,<span class="at">sep=</span><span class="st">&quot; &quot;</span>,<span class="at">na=</span><span class="st">&quot;NA&quot;</span>)</span>
-<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a><span class="co"># munge PC and GWAMA files ##</span></span>
-<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a><span class="co">#load dependencies for genomic SEM</span></span>
-<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(devtools)</span>
-<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GenomicSEM)</span>
-<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-42"><a href="#cb10-42" aria-hidden="true" tabindex="-1"></a>files<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;Risk_PC_GWAS.txt&quot;</span>,<span class="st">&quot;GWAMA_header.txt&quot;</span>)</span>
-<span id="cb10-43"><a href="#cb10-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-44"><a href="#cb10-44" aria-hidden="true" tabindex="-1"></a><span class="co"># use 1000G reference genome (HapMap 3)</span></span>
-<span id="cb10-45"><a href="#cb10-45" aria-hidden="true" tabindex="-1"></a><span class="co"># wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2</span></span>
-<span id="cb10-46"><a href="#cb10-46" aria-hidden="true" tabindex="-1"></a>hm3<span class="ot">&lt;-</span><span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_header/w_hm3.noMHC.snplist.txt&quot;</span>)</span>
-<span id="cb10-47"><a href="#cb10-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-48"><a href="#cb10-48" aria-hidden="true" tabindex="-1"></a>trait.names<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;Risk_PC&quot;</span>,<span class="st">&quot;GWAMA&quot;</span>)</span>
-<span id="cb10-49"><a href="#cb10-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-50"><a href="#cb10-50" aria-hidden="true" tabindex="-1"></a>N<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="dv">315894</span>,<span class="cn">NA</span>)</span>
-<span id="cb10-51"><a href="#cb10-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-52"><a href="#cb10-52" aria-hidden="true" tabindex="-1"></a><span class="fu">munge</span>(<span class="at">files=</span>files,</span>
-<span id="cb10-53"><a href="#cb10-53" aria-hidden="true" tabindex="-1"></a>      <span class="at">hm3=</span>hm3,</span>
-<span id="cb10-54"><a href="#cb10-54" aria-hidden="true" tabindex="-1"></a>      <span class="at">trait.names =</span> trait.names,</span>
-<span id="cb10-55"><a href="#cb10-55" aria-hidden="true" tabindex="-1"></a>      <span class="at">N=</span>N)</span></code></pre></div>
+<pre class="r"><code># set work directory to where raw GWAS are stored
+setwd(paste0(getwd(),&quot;/GWAS_raw&quot;))
+
+# store file name in gwas_file
+gwas_file&lt;-list.files(pattern=&quot;RISK_PC&quot;)
+
+# load into R
+Risk_PC&lt;-fread(gwas_file,header=T,data.table = F)
+
+# rename columns
+names(Risk_PC)&lt;-c(&quot;SNP&quot;,&quot;CHR&quot;,&quot;POS&quot;,&quot;A1&quot;,&quot;A2&quot;,&quot;eaf_A1&quot;,&quot;beta&quot;,&quot;se&quot;,&quot;p&quot;)
+
+# and set wd to the directory I want to save the files with the new names
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+
+# write table 
+fwrite(Risk_PC,file=&quot;Risk_PC_GWAS.txt&quot;, quote=FALSE,col.names=TRUE,row.names=F,sep=&quot; &quot;)
+
+
+# prepare GWAMA file #
+# set work directory to where GWAMA file is stored
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+# store file name in gwas_file
+gwas_file&lt;-list.files(pattern=&quot;weighted_GWAMA.results.txt&quot;)
+# load into R
+GWAMA&lt;-fread(gwas_file,header=T,data.table = F)
+# rename columns (rename N_eff into N so that GenomicSEM recognises it as N column)
+names(GWAMA)[which(names(GWAMA)==&quot;N_eff&quot;)]&lt;-&quot;N&quot;
+GWAMA&lt;-GWAMA[,c(&quot;SNPID&quot;,&quot;CHR&quot;,&quot;BP&quot;,&quot;EA&quot;,&quot;OA&quot;,&quot;EAF&quot;,&quot;MAF&quot;,&quot;N&quot;,&quot;BETA&quot;,&quot;SE&quot;,&quot;Z&quot;,&quot;p&quot;)]
+
+# setwd to where you want to save GWAMA
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+# write table 
+fwrite(GWAMA,file=&quot;GWAMA_header.txt&quot;, quote=FALSE,col.names=TRUE,row.names=F,sep=&quot; &quot;,na=&quot;NA&quot;)
+
+# munge PC and GWAMA files ##
+
+#load dependencies for genomic SEM
+library(devtools)
+library(GenomicSEM)
+
+files&lt;-c(&quot;Risk_PC_GWAS.txt&quot;,&quot;GWAMA_header.txt&quot;)
+
+# use 1000G reference genome (HapMap 3)
+# wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2
+hm3&lt;-paste0(getwd(),&quot;/GWAS_header/w_hm3.noMHC.snplist.txt&quot;)
+
+trait.names&lt;-c(&quot;Risk_PC&quot;,&quot;GWAMA&quot;)
+
+N&lt;-c(315894,NA)
+
+munge(files=files,
+      hm3=hm3,
+      trait.names = trait.names,
+      N=N)</code></pre>
 </div>
 <div id="perform-ldsc" class="section level3">
 <h3>Perform LDSC</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_munged&quot;</span>))</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>traits<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;speeding.sumstats.gz&quot;</span>,<span class="st">&quot;drinking.sumstats.gz&quot;</span>,<span class="st">&quot;smoking.sumstats.gz&quot;</span>,<span class="st">&quot;sexual_partners.sumstats.gz&quot;</span>,<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA/Risk_PC.sumstats.gz&quot;</span>),<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA/GenomicPCA.sumstats.gz&quot;</span>))</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>ld<span class="ot">&lt;-</span> <span class="st">&quot;eur_w_ld_chr/&quot;</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>wld<span class="ot">&lt;-</span> <span class="st">&quot;eur_w_ld_chr/&quot;</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>trait.names<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;speeding&quot;</span>,<span class="st">&quot;drinking&quot;</span>,<span class="st">&quot;smoking&quot;</span>,<span class="st">&quot;sexual_partners&quot;</span>,<span class="st">&quot;phenotypicPC&quot;</span>,<span class="st">&quot;genomicPC&quot;</span>)</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>sample.prev<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="cn">NA</span>,<span class="cn">NA</span>,.<span class="dv">59</span>,<span class="cn">NA</span>,<span class="cn">NA</span>,<span class="cn">NA</span>)</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>population.prev<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="cn">NA</span>,<span class="cn">NA</span>,.<span class="dv">5</span>,<span class="cn">NA</span>,<span class="cn">NA</span>,<span class="cn">NA</span>)</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>LDSCoutput_evaluate_GWAMA<span class="ot">&lt;-</span><span class="fu">ldsc</span>(<span class="at">traits=</span>traits,</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">sample.prev=</span>sample.prev,</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">population.prev=</span>population.prev,</span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">ld=</span>ld,<span class="at">wld=</span>wld,</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">trait.names =</span> trait.names, <span class="at">stand =</span> T)</span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(LDSCoutput_evaluate_GWAMA, <span class="at">file=</span><span class="st">&quot;Evaluate_GWAMA.RData&quot;</span>)</span></code></pre></div>
+<pre class="r"><code>setwd(paste0(getwd(),&quot;/GWAS_munged&quot;))
+
+traits&lt;-c(&quot;speeding.sumstats.gz&quot;,&quot;drinking.sumstats.gz&quot;,&quot;smoking.sumstats.gz&quot;,&quot;sexual_partners.sumstats.gz&quot;,paste0(getwd(),&quot;/Evaluate_GWAMA/Risk_PC.sumstats.gz&quot;),paste0(getwd(),&quot;/Evaluate_GWAMA/GenomicPCA.sumstats.gz&quot;))
+
+ld&lt;- &quot;eur_w_ld_chr/&quot;
+wld&lt;- &quot;eur_w_ld_chr/&quot;
+trait.names&lt;-c(&quot;speeding&quot;,&quot;drinking&quot;,&quot;smoking&quot;,&quot;sexual_partners&quot;,&quot;phenotypicPC&quot;,&quot;genomicPC&quot;)
+sample.prev&lt;-c(NA,NA,.59,NA,NA,NA)
+population.prev&lt;-c(NA,NA,.5,NA,NA,NA)
+
+LDSCoutput_evaluate_GWAMA&lt;-ldsc(traits=traits,
+                                 sample.prev=sample.prev,
+                                 population.prev=population.prev,
+                                 ld=ld,wld=wld,
+                                 trait.names = trait.names, stand = T)
+
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+save(LDSCoutput_evaluate_GWAMA, file=&quot;Evaluate_GWAMA.RData&quot;)</code></pre>
 </div>
 <div id="display-genetic-correlations" class="section level3">
 <h3>Display genetic correlations</h3>
-<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_GWAMA-1.png" style="display: block; margin: auto;" /></p>
+<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_GWAMA-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p><em>Note the strong genetic correlation between our genomic PCA sumstats and the phenotypic PC sumstats. It suggests that we extract the same SNP effects from GWAS summary statistics only as was captured by Linner when extracting a phenotypic PC and calculating GWAS sumstats for it.</em></p>
 </div>
 <div id="display-ldsc-intercepts" class="section level3">
 <h3>Display LDSC intercepts</h3>
 <p>LDSC intercepts capture sample overlap, among other confounding factors. We would expect traits compared with themselves to have a perfect sample overlap (1 or very close to 1). When comparing our genetic PC sumstats with the four risky behaviors sumstats, we expect substantial sample overlap as all four have contributed to our genetic PC. In theory, our genetic PC and the phenotypic PC by Linner capture the same signal, we expect an even stronger sample overlap between these two traits.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">substring</span>(<span class="fu">getwd</span>(), <span class="at">first =</span> <span class="dv">1</span>, <span class="at">last =</span> <span class="dv">18</span>),<span class="st">&quot;Documents/GitHub/genomicPCA/data&quot;</span>))</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;Evaluate_GWAMA.RData&quot;</span>)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_evaluate_GWAMA<span class="sc">$</span>I)[[<span class="dv">1</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_evaluate_GWAMA<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_evaluate_GWAMA<span class="sc">$</span>I)[[<span class="dv">2</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_evaluate_GWAMA<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>intercepts<span class="ot">&lt;-</span><span class="fu">data.matrix</span>(<span class="fu">round</span>(LDSCoutput_evaluate_GWAMA<span class="sc">$</span>I,<span class="at">digits =</span> <span class="dv">2</span>))</span></code></pre></div>
-<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_intercepts-1.png" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>setwd(paste0(substring(getwd(), first = 1, last = 18),&quot;Documents/GitHub/genomicPCA/data&quot;))
+load(&quot;Evaluate_GWAMA.RData&quot;)
+
+dimnames(LDSCoutput_evaluate_GWAMA$I)[[1]]&lt;-dimnames(LDSCoutput_evaluate_GWAMA$S)[[2]]
+dimnames(LDSCoutput_evaluate_GWAMA$I)[[2]]&lt;-dimnames(LDSCoutput_evaluate_GWAMA$S)[[2]]
+
+intercepts&lt;-data.matrix(round(LDSCoutput_evaluate_GWAMA$I,digits = 2))</code></pre>
+<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_intercepts-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="comparison-of-our-genetic-pc-sumstats-with-other-traits" class="section level3">
 <h3>Comparison of our genetic PC sumstats with other traits</h3>
@@ -659,136 +867,136 @@ a.sourceLine {
 <p>For comparison, we also calculated genetic PC sumstats using a covariance matrix obtained through LDSC, instead of a correlation matrix. We run the same code as displayed above (Step 3: Run GWAMA with modified function), but replacing the standardised genetic correlation matrix with the unstandardised matrix.</p>
 <div id="genetic-pc-sumstats-extracted-from-covariance-matrix" class="section level3">
 <h3>Genetic PC sumstats extracted from covariance matrix</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load dependencies</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">substring</span>(<span class="fu">getwd</span>(), <span class="at">first =</span> <span class="dv">1</span>, <span class="at">last =</span> <span class="dv">18</span>),<span class="st">&quot;Documents/GitHub/genomicPCA/scripts&quot;</span>))</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="st">&quot;my_GWAMA_26032020.R&quot;</span>)</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Make an empty list with length equal to the number of input files</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>dat<span class="ot">&lt;-</span><span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>)</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAMA_format&quot;</span>))</span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>gwama_files<span class="ot">&lt;-</span><span class="fu">list.files</span>(<span class="at">pattern =</span> <span class="st">&quot;gwama_&quot;</span>)</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>all_files<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(gwama_files, <span class="at">file_names =</span> <span class="fu">c</span>(<span class="st">&quot;speeding&quot;</span>,<span class="st">&quot;drinking&quot;</span>,<span class="st">&quot;smoking&quot;</span>,<span class="st">&quot;sexual_partners&quot;</span>)))</span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Read in the data </span></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>n<span class="ot">&lt;-</span><span class="dv">0</span></span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(file <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(all_files)){</span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  n<span class="ot">&lt;-</span>n<span class="sc">+</span><span class="dv">1</span></span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(n)</span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  dat[[all_files<span class="sc">$</span>file_names[n]]]<span class="ot">&lt;-</span><span class="fu">fread</span>(all_files<span class="sc">$</span>gwama_files[n],<span class="at">data.table =</span> F)</span>
-<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="co"># load covariance matrix from LDSC</span></span>
-<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">substring</span>(<span class="fu">getwd</span>(), <span class="at">first =</span> <span class="dv">1</span>, <span class="at">last =</span> <span class="dv">18</span>),<span class="st">&quot;Documents/GitHub/genomicPCA/data&quot;</span>))</span>
-<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">&quot;risk_taking_stand.RData&quot;</span>)</span>
-<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="co"># select the matrix of LDSC intercepts </span></span>
-<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="co"># this matrix should be in the same order as data read into dat but I have added some code to specifically make sure they take the same order</span></span>
-<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>order<span class="ot">&lt;-</span><span class="fu">names</span>(dat)</span>
-<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>I)[[<span class="dv">1</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>I)[[<span class="dv">2</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>CTI<span class="ot">&lt;-</span><span class="fu">as.matrix</span>(LDSCoutput_risk_taking<span class="sc">$</span>I[order,order])</span>
-<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a><span class="co"># load correlation matrix</span></span>
-<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S)[[<span class="dv">1</span>]]<span class="ot">&lt;-</span><span class="fu">dimnames</span>(LDSCoutput_risk_taking<span class="sc">$</span>S)[[<span class="dv">2</span>]]</span>
-<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>covmatrix<span class="ot">&lt;-</span>LDSCoutput_risk_taking<span class="sc">$</span>S[order,order]</span>
-<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a><span class="co"># eigen decomposition</span></span>
-<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>eigenvectors<span class="ot">&lt;-</span><span class="fu">eigen</span>(covmatrix)<span class="sc">$</span>vectors</span>
-<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>eigenvalues<span class="ot">&lt;-</span><span class="fu">eigen</span>(covmatrix)<span class="sc">$</span>values</span>
-<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate standardised loadings</span></span>
-<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>loadings<span class="ot">&lt;-</span><span class="fu">as.vector</span>(eigenvectors<span class="sc">%*%</span><span class="fu">sqrt</span>(<span class="fu">diag</span>(eigenvalues))[,<span class="dv">1</span>])</span>
-<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># multiply the loadings with -1 if the median value of the loadings is below 0</span></span>
-<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># this achieves a more intuitive interpretation but doesn&#39;t change the results - the signal is the same even when we multiple it with -1</span></span>
-<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a>    median_loadings<span class="ot">&lt;-</span><span class="fu">median</span>(loadings)</span>
-<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>    mean_direction<span class="ot">&lt;-</span><span class="fu">sign</span>(median_loadings)</span>
-<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(mean_direction <span class="sc">==</span> <span class="sc">-</span><span class="dv">1</span>){</span>
-<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>    loadings<span class="ot">&lt;-</span>loadings<span class="sc">*</span>(<span class="sc">-</span><span class="dv">1</span>)</span>
-<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
-<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>    loadings<span class="ot">&lt;-</span>loadings}</span>
-<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a><span class="co"># run my modified GWAMA function</span></span>
-<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a><span class="fu">my_GWAMA</span>(<span class="at">x=</span>dat,</span>
-<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>          <span class="at">cov_Z=</span>CTI,</span>
-<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>          <span class="at">h2=</span>loadings,</span>
-<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a>          <span class="at">out=</span><span class="st">&quot;.&quot;</span>,</span>
-<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a>          <span class="at">name=</span><span class="st">&quot;my_GWAMA_covmatrix_26082021&quot;</span>,</span>
-<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>          <span class="at">output_gz=</span>F,</span>
-<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>          <span class="at">check_columns=</span>F)</span></code></pre></div>
+<pre class="r"><code># load dependencies
+source(&quot;https://github.com/baselmans/multivariate_GWAMA/blob/master/Test_Data/N_weighted_GWAMA.function.1_2_6.R?raw=TRUE&quot;)
+library(data.table)
+library(stringr)
+
+setwd(paste0(substring(getwd(), first = 1, last = 18),&quot;Documents/GitHub/genomicPCA/scripts&quot;))
+source(&quot;my_GWAMA_26032020.R&quot;)
+
+
+# Make an empty list with length equal to the number of input files
+dat&lt;-vector(&quot;list&quot;)
+
+
+setwd(paste0(getwd(),&quot;/GWAMA_format&quot;))
+gwama_files&lt;-list.files(pattern = &quot;gwama_&quot;)
+all_files&lt;-as.data.frame(cbind(gwama_files, file_names = c(&quot;speeding&quot;,&quot;drinking&quot;,&quot;smoking&quot;,&quot;sexual_partners&quot;)))
+  
+# Read in the data 
+n&lt;-0
+for(file in 1:nrow(all_files)){
+  n&lt;-n+1
+  print(n)
+  dat[[all_files$file_names[n]]]&lt;-fread(all_files$gwama_files[n],data.table = F)
+}
+
+# load covariance matrix from LDSC
+setwd(paste0(substring(getwd(), first = 1, last = 18),&quot;Documents/GitHub/genomicPCA/data&quot;))
+load(&quot;risk_taking_stand.RData&quot;)
+
+# select the matrix of LDSC intercepts 
+# this matrix should be in the same order as data read into dat but I have added some code to specifically make sure they take the same order
+order&lt;-names(dat)
+dimnames(LDSCoutput_risk_taking$I)[[1]]&lt;-dimnames(LDSCoutput_risk_taking$S)[[2]]
+dimnames(LDSCoutput_risk_taking$I)[[2]]&lt;-dimnames(LDSCoutput_risk_taking$S)[[2]]
+CTI&lt;-as.matrix(LDSCoutput_risk_taking$I[order,order])
+
+# load correlation matrix
+dimnames(LDSCoutput_risk_taking$S)[[1]]&lt;-dimnames(LDSCoutput_risk_taking$S)[[2]]
+covmatrix&lt;-LDSCoutput_risk_taking$S[order,order]
+
+# eigen decomposition
+eigenvectors&lt;-eigen(covmatrix)$vectors
+eigenvalues&lt;-eigen(covmatrix)$values
+
+# calculate standardised loadings
+loadings&lt;-as.vector(eigenvectors%*%sqrt(diag(eigenvalues))[,1])
+
+    # multiply the loadings with -1 if the median value of the loadings is below 0
+    # this achieves a more intuitive interpretation but doesn&#39;t change the results - the signal is the same even when we multiple it with -1
+    median_loadings&lt;-median(loadings)
+    mean_direction&lt;-sign(median_loadings)
+    if(mean_direction == -1){
+    loadings&lt;-loadings*(-1)
+    } else {
+    loadings&lt;-loadings}
+
+# run my modified GWAMA function
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+my_GWAMA(x=dat,
+          cov_Z=CTI,
+          h2=loadings,
+          out=&quot;.&quot;,
+          name=&quot;my_GWAMA_covmatrix_26082021&quot;,
+          output_gz=F,
+          check_columns=F)</code></pre>
 <div id="munge-and-format-files" class="section level4">
 <h4>Munge and format files</h4>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># prepare GWAMA file #</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># set work directory to where GWAMA file is stored</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># store file name in object called file</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>file<span class="ot">&lt;-</span><span class="fu">list.files</span>(<span class="at">pattern=</span><span class="st">&quot;covmatrix_26082021.N_weighted_GWAMA.results&quot;</span>)</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># load into R</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(data.table)</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>GWAMA<span class="ot">&lt;-</span><span class="fu">fread</span>(file,<span class="at">header=</span>T,<span class="at">data.table =</span> F)</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co"># rename columns (rename N_eff into N so that GenomicSEM recognises it as N column)</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(GWAMA)[<span class="fu">which</span>(<span class="fu">names</span>(GWAMA)<span class="sc">==</span><span class="st">&quot;N_eff&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;N&quot;</span></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(GWAMA)[<span class="fu">which</span>(<span class="fu">names</span>(GWAMA)<span class="sc">==</span><span class="st">&quot;PVAL&quot;</span>)]<span class="ot">&lt;-</span><span class="st">&quot;P&quot;</span></span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>GWAMA<span class="ot">&lt;-</span>GWAMA[,<span class="fu">c</span>(<span class="st">&quot;SNPID&quot;</span>,<span class="st">&quot;CHR&quot;</span>,<span class="st">&quot;BP&quot;</span>,<span class="st">&quot;EA&quot;</span>,<span class="st">&quot;OA&quot;</span>,<span class="st">&quot;EAF&quot;</span>,<span class="st">&quot;MAF&quot;</span>,<span class="st">&quot;N&quot;</span>,<span class="st">&quot;BETA&quot;</span>,<span class="st">&quot;SE&quot;</span>,<span class="st">&quot;Z&quot;</span>,<span class="st">&quot;P&quot;</span>)]</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="co"># setwd to where you want to save GWAMA</span></span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="co"># write table </span></span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="fu">fwrite</span>(GWAMA,<span class="at">file=</span><span class="st">&quot;GWAMA_cov_header.txt&quot;</span>, <span class="at">quote=</span><span class="cn">FALSE</span>,<span class="at">col.names=</span><span class="cn">TRUE</span>,<span class="at">row.names=</span>F,<span class="at">sep=</span><span class="st">&quot; &quot;</span>,<span class="at">na=</span><span class="st">&quot;NA&quot;</span>)</span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="co">#load dependencies for genomic SEM</span></span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(devtools)</span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GenomicSEM)</span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>files<span class="ot">&lt;-</span><span class="st">&quot;GWAMA_cov_header.txt&quot;</span></span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a><span class="co"># use 1000G reference genome (HapMap 3)</span></span>
-<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="co"># wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2</span></span>
-<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>hm3<span class="ot">&lt;-</span><span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_header/w_hm3.noMHC.snplist.txt&quot;</span>)</span>
-<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>trait.names<span class="ot">&lt;-</span><span class="st">&quot;GenomicPCA_cov&quot;</span></span>
-<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>N<span class="ot">&lt;-</span><span class="cn">NA</span></span>
-<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a><span class="fu">munge</span>(<span class="at">files=</span>files,</span>
-<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>      <span class="at">hm3=</span>hm3,</span>
-<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>      <span class="at">trait.names =</span> trait.names,</span>
-<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>      <span class="at">N=</span>N)</span></code></pre></div>
+<pre class="r"><code># prepare GWAMA file #
+# set work directory to where GWAMA file is stored
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+# store file name in object called file
+file&lt;-list.files(pattern=&quot;covmatrix_26082021.N_weighted_GWAMA.results&quot;)
+# load into R
+library(data.table)
+GWAMA&lt;-fread(file,header=T,data.table = F)
+
+# rename columns (rename N_eff into N so that GenomicSEM recognises it as N column)
+names(GWAMA)[which(names(GWAMA)==&quot;N_eff&quot;)]&lt;-&quot;N&quot;
+names(GWAMA)[which(names(GWAMA)==&quot;PVAL&quot;)]&lt;-&quot;P&quot;
+
+GWAMA&lt;-GWAMA[,c(&quot;SNPID&quot;,&quot;CHR&quot;,&quot;BP&quot;,&quot;EA&quot;,&quot;OA&quot;,&quot;EAF&quot;,&quot;MAF&quot;,&quot;N&quot;,&quot;BETA&quot;,&quot;SE&quot;,&quot;Z&quot;,&quot;P&quot;)]
+
+# setwd to where you want to save GWAMA
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+# write table 
+fwrite(GWAMA,file=&quot;GWAMA_cov_header.txt&quot;, quote=FALSE,col.names=TRUE,row.names=F,sep=&quot; &quot;,na=&quot;NA&quot;)
+
+#load dependencies for genomic SEM
+library(devtools)
+library(GenomicSEM)
+
+files&lt;-&quot;GWAMA_cov_header.txt&quot;
+
+# use 1000G reference genome (HapMap 3)
+# wget https://data.broadinstitute.org/alkesgroup/LDSCORE/w_hm3.snplist.bz2
+hm3&lt;-paste0(getwd(),&quot;/GWAS_header/w_hm3.noMHC.snplist.txt&quot;)
+
+trait.names&lt;-&quot;GenomicPCA_cov&quot;
+
+N&lt;-NA
+
+munge(files=files,
+      hm3=hm3,
+      trait.names = trait.names,
+      N=N)</code></pre>
 </div>
 <div id="calculate-ldsc" class="section level4">
 <h4>Calculate LDSC</h4>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/GWAS_munged&quot;</span>))</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>traits<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;speeding.sumstats.gz&quot;</span>,<span class="st">&quot;drinking.sumstats.gz&quot;</span>,<span class="st">&quot;smoking.sumstats.gz&quot;</span>,<span class="st">&quot;sexual_partners.sumstats.gz&quot;</span>,<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA/Risk_PC.sumstats.gz&quot;</span>),<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA/GenomicPCA_cov.sumstats.gz&quot;</span>))</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>ld<span class="ot">&lt;-</span> <span class="st">&quot;eur_w_ld_chr/&quot;</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>wld<span class="ot">&lt;-</span> <span class="st">&quot;eur_w_ld_chr/&quot;</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>trait.names<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;speeding&quot;</span>,<span class="st">&quot;drinking&quot;</span>,<span class="st">&quot;smoking&quot;</span>,<span class="st">&quot;sexual_partners&quot;</span>,<span class="st">&quot;phenotypicPC&quot;</span>,<span class="st">&quot;genomicPC&quot;</span>)</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>sample.prev<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="cn">NA</span>,<span class="cn">NA</span>,.<span class="dv">59</span>,<span class="cn">NA</span>,<span class="cn">NA</span>,<span class="cn">NA</span>)</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>population.prev<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="cn">NA</span>,<span class="cn">NA</span>,.<span class="dv">5</span>,<span class="cn">NA</span>,<span class="cn">NA</span>,<span class="cn">NA</span>)</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>LDSCoutput_evaluate_GWAMA<span class="ot">&lt;-</span><span class="fu">ldsc</span>(<span class="at">traits=</span>traits,</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">sample.prev=</span>sample.prev,</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">population.prev=</span>population.prev,</span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">ld=</span>ld,<span class="at">wld=</span>wld,</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">trait.names =</span> trait.names, <span class="at">stand =</span> T)</span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="fu">paste0</span>(<span class="fu">getwd</span>(),<span class="st">&quot;/Evaluate_GWAMA&quot;</span>))</span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(LDSCoutput_evaluate_GWAMA, <span class="at">file=</span><span class="st">&quot;Evaluate_cov_GWAMA.RData&quot;</span>)</span></code></pre></div>
+<pre class="r"><code>setwd(paste0(getwd(),&quot;/GWAS_munged&quot;))
+
+traits&lt;-c(&quot;speeding.sumstats.gz&quot;,&quot;drinking.sumstats.gz&quot;,&quot;smoking.sumstats.gz&quot;,&quot;sexual_partners.sumstats.gz&quot;,paste0(getwd(),&quot;/Evaluate_GWAMA/Risk_PC.sumstats.gz&quot;),paste0(getwd(),&quot;/Evaluate_GWAMA/GenomicPCA_cov.sumstats.gz&quot;))
+
+ld&lt;- &quot;eur_w_ld_chr/&quot;
+wld&lt;- &quot;eur_w_ld_chr/&quot;
+trait.names&lt;-c(&quot;speeding&quot;,&quot;drinking&quot;,&quot;smoking&quot;,&quot;sexual_partners&quot;,&quot;phenotypicPC&quot;,&quot;genomicPC&quot;)
+sample.prev&lt;-c(NA,NA,.59,NA,NA,NA)
+population.prev&lt;-c(NA,NA,.5,NA,NA,NA)
+
+LDSCoutput_evaluate_GWAMA&lt;-ldsc(traits=traits,
+                                 sample.prev=sample.prev,
+                                 population.prev=population.prev,
+                                 ld=ld,wld=wld,
+                                 trait.names = trait.names, stand = T)
+
+setwd(paste0(getwd(),&quot;/Evaluate_GWAMA&quot;))
+save(LDSCoutput_evaluate_GWAMA, file=&quot;Evaluate_cov_GWAMA.RData&quot;)</code></pre>
 </div>
 <div id="heatmap" class="section level4">
 <h4>Heatmap</h4>
-<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_covariance-1.png" style="display: block; margin: auto;" /></p>
+<p><img src="25082021_geneticPCA_explanation_files/figure-html/heatmap_covariance-1.png" width="672" style="display: block; margin: auto;" /></p>
 <p>The resulting genetic PC sumstats weighted by PC loadings extracted from a covariance matrix index very similar signal as those extracted from a correlation matrix.</p>
 <p>By using a covariance instead of a correlation matrix, the genetic correlation between our genotypic PC sumstats and the phenotypic PC sumstats slighly declined (rcor = 0.99 vs. rcov = -0.95), suggesting that using PC loadings from a correlation matrix to weigh the SNP-weights produced slightly more accurate results. The genetic correlation between our genotypic PC and individual risky behaviors also slightly shifted.</p>
 <p><br> <br></p>
@@ -820,11 +1028,6 @@ a.sourceLine {
 </div>
 </div>
 </div>
-</article>
-</div>
-</div>
-</div>
-</div>
 
 &nbsp;
 <hr />
@@ -848,8 +1051,74 @@ a.sourceLine {
 &nbsp;
 
 
-<!-- code folding -->
+</div>
+</div>
 
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
 <script>
