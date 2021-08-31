@@ -1,5 +1,5 @@
 ---
-title: "Principal component analysis of GWAS summary statistics"
+title: "Principal component analysis (PCA) of Genome-Wide Association Study (GWAS) summary statistics"
 output:
   html_document:
     theme: yeti
@@ -27,7 +27,7 @@ $$\\[0.1in]$$
 
 <center>
 
-![](C:/Users/k1894405/Documents/GitHub/genomicPCA/methods_visualisation.jpg){width=60%}
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/methods_visualisation.jpg){width=70%}
 
 $$\\[0.1in]$$
 </center>
