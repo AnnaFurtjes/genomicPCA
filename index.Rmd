@@ -27,6 +27,8 @@ Authors:
 
 Click <span style="text-decoration: underline; color: #ff878d">[here](25082021_geneticPCA_explanation.html)</span> for a reproducible step-by-step demonstration of genomic PCA.
 
+$$\\[0.1in]$$
 
+![](C:/Users/k1894405/Documents/GitHub/genomicPCA/methods_visualisation.jpg){width=60%}
 
 $$\\[0.1in]$$
