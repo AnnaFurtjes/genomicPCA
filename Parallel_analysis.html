@@ -282,6 +282,7 @@ $(document).ready(function () {
 
 
 <p><br></p>
+<hr />
 <p>Here we present a version of parallel analysis for PCA performed in genomic correlation matrices. Parallel analysis tests whether data-derived genetic PCs explain more variance than expected by chance, that is, whether they explained more than 95% of their corresponding PCs generated under a simulated null correlation matrix. This version of parallel analysis generates null distributions of eigenvalues by simulating null correlation matrices sampled from a diagonal population correlation matrix, where the multivariate sampling distribution is specified to take the form of the sampling distribution of the standardised empirical genetic correlation matrix (the VSTAND matrix, as estimated using GenomicSEM). This sampling correlation matrix serves as an index of the precision of and dependencies among genetic correlations when generating the random null models. Here, we specify 1,000 replications to simulate the null correlation matrices and use a 95% threshold for distinguishing true eigenvalues from noise. The analysis script was written by Javier de la Fuente, and is made publicly available <a href="https://github.com/AnnaFurtjes/genomicPCA/tree/main/data">here</a>.</p>
 <p><br></p>
 <pre class="r"><code># source Javiers function
