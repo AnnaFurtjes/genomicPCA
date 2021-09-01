@@ -48,7 +48,8 @@ In this example, Parallel Analysis suggests extracting 1 component to represent 
 
 $$\\[0.01in]$$
 
+<center>
 
 ![](C:/Users/k1894405/Documents/GitHub/genomicPCA/data/PA.PNG){width=60%}
 
-
+</center>
