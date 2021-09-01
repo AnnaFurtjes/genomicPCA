@@ -9,9 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Anna Elisabeth Furtjes   King’s College London" />
 
 
-<title>Principal component analysis (PCA) of Genome-Wide Association Study (GWAS) summary statistics</title>
+<title>Parallel analysis</title>
 
 <script src="site_libs/header-attrs-2.10/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
@@ -30,6 +31,7 @@
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 
@@ -215,6 +217,9 @@ $(document).ready(function () {
 </style>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
 
 
 
@@ -260,33 +265,40 @@ $(document).ready(function () {
 
 <div id="header">
 
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
 
 
-<h1 class="title toc-ignore">Principal component analysis (PCA) of Genome-Wide Association Study (GWAS) summary statistics</h1>
+
+<h1 class="title toc-ignore">Parallel analysis</h1>
+<h4 class="author">Anna Elisabeth Furtjes <br> King’s College London</h4>
 
 </div>
 
 
+<p><br></p>
+<p>Here we present a version of parallel analysis for PCA performed in genomic correlation matrices. Parallel analysis tests whether data-derived genetic PCs explain more variance than expected by chance, that is, whether they explained more than 95% of their corresponding PCs generated under a simulated null correlation matrix. This version of parallel analysis generates null distributions of eigenvalues by simulating null correlation matrices sampled from a diagonal population correlation matrix, where the multivariate sampling distribution is specified to take the form of the sampling distribution of the standardised empirical genetic correlation matrix (the VSTAND matrix, as estimated using GenomicSEM). This sampling correlation matrix serves as an index of the precision of and dependencies among genetic correlations when generating the random null models. Here, we specify 1,000 replications to simulate the null correlation matrices and use a 95% threshold for distinguishing true eigenvalues from noise. The analysis script was written by Javier de la Fuente, and is made publicly available <a href="https://github.com/AnnaFurtjes/genomicPCA/tree/main/data">here</a>.</p>
+<p><br></p>
+<pre class="r"><code># source Javiers function
+# use try() to ignore the error: by loading it, R will attempt to execute the function but the input has not yet been specified by the user 
+setwd(paste0(substring(getwd(), first = 1, last = 18),&quot;Documents/GitHub/genomicPCA/data&quot;))
+try(source(&quot;Parallel_Anallysis_paLDSC_JF.R&quot;))
+
+# load the LDSC results
+# make sure that, when calculating ldsc(), specification stand = T was included
+load(&quot;risk_taking_stand.RData&quot;)
+
+# run parallel analysis function 
+paLDSC(S_Stand = LDSCoutput_risk_taking$S_Stand, V_Stand = LDSCoutput_risk_taking$V_Stand, r = 1000, p = .95, diag = F, fa = F, fm = &quot;minres&quot;, save.pdf = T)</code></pre>
 <p><span class="math display">\[\\[0.01in]\]</span></p>
-<p>Here we present a method we call <strong>Genomic PCA</strong> to derive GWAS summary statistics for a genetic principal component of multiple GWAS phenotypes derived from samples of unknown degrees of overlap using univariate summary statistics for the individual phenotypes. This procedure simply relies on publicly available GWAS summary statistics as input data. We make use of the <a href="https://github.com/GenomicSEM/GenomicSEM/wiki">GenomicSEM software</a> and build on the work on genome-wide multivariate meta-analysis by <a href="https://pubmed.ncbi.nlm.nih.gov/30643256/">Baselmans et al. (2019)</a>.</p>
-<p>Authors:</p>
-<ul>
-<li>Anna E. Fürtjes</li>
-<li>Elliot M. Tucker-Drob</li>
-<li>Javier de la Fuente</li>
-<li>Stuart J. Ritchie</li>
-</ul>
-<hr />
-<p>Available code:</p>
-<ol style="list-style-type: decimal">
-<li><p>Click <span style="text-decoration: underline; color: #ff878d"><a href="25082021_geneticPCA_explanation.html">here</a></span> for a reproducible step-by-step demonstration of genomic PCA.</p></li>
-<li><p>Click <span style="text-decoration: underline; color: #ff878d"><a href="Parallel_analysis.html">here</a></span> for a reproducible demonstration of parallel analysis for genomic correlation matrices.</p></li>
-</ol>
-<p><span class="math display">\[\\[0.1in]\]</span></p>
-<center>
-<p><img src="methods_visualisation.jpg" style="width:70.0%" /></p>
-<span class="math display">\[\\[0.1in]\]</span>
-</center>
+<p>Running the function will create a PDF depicting the Scree Plots and it will suggest how many components to extract for the underlying empirical data. In this example, Parallel Analysis suggests extracting 1 component to represent general dimensions of genetic sharing underlying four risky behaviours GWAS.</p>
+<p><span class="math display">\[\\[0.01in]\]</span></p>
+<p><img src="data/PA.PNG" style="width:60.0%" /></p>
 
 &nbsp;
 <hr />
@@ -341,6 +353,11 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("show" === "show");
+});
+</script>
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->

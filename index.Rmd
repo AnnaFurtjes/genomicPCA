@@ -16,12 +16,19 @@ Authors:
 
 * Anna E. Fürtjes
 * Elliot M. Tucker-Drob
+* Javier de la Fuente
 * Stuart J. Ritchie
 
 
 ***
 
-Click <span style="text-decoration: underline; color: #ff878d">[here](25082021_geneticPCA_explanation.html)</span> for a reproducible step-by-step demonstration of genomic PCA.
+Available code: 
+
+
+  1) Click <span style="text-decoration: underline; color: #ff878d">[here](25082021_geneticPCA_explanation.html)</span> for a reproducible step-by-step demonstration of genomic PCA.
+
+
+  2) Click <span style="text-decoration: underline; color: #ff878d">[here](Parallel_analysis.html)</span> for a reproducible demonstration of parallel analysis for genomic correlation matrices.
 
 $$\\[0.1in]$$
 
@@ -31,3 +38,5 @@ $$\\[0.1in]$$
 
 $$\\[0.1in]$$
 </center>
+
+

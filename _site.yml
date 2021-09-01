@@ -6,5 +6,7 @@ navbar:
   left: 
    - text: "Home"
      href: index.html
-   - text: "Code"
+   - text: "Genomic Principal Component Analysis"
      href: 25082021_geneticPCA_explanation.html
+   - text: "Genomic Parallel Analysis"
+     href: Parallel_analysis.html
