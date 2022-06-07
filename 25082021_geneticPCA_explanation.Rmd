@@ -20,6 +20,9 @@ opts_knit$set(root.dir = "C:/Users/k1894405/OneDrive - King's College London/PhD
 knitr::opts_chunk$set(echo = TRUE, fig.align="center")
 ```
 
+```{r klippy, echo=FALSE, include=TRUE}
+klippy::klippy(tooltip_message = 'Click to copy code', tooltip_success = 'Done', color = "red")
+```
 
 ***
 
@@ -62,7 +65,7 @@ After downloading the summary statistics, we use the genomic SEM package in R to
 
 ### Step 1: Prepare and munge files
 
-```{r prepare_data, eval=FALSE,echo=TRUE}
+```{r prepare_data, eval=FALSE,echo=TRUE, class.source='klippy'}
 library(data.table)
 library(devtools)
 library(GenomicSEM)
