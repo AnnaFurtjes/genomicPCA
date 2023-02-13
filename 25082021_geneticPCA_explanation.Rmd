@@ -266,6 +266,7 @@ Linners_map
 LDSC intercepts quantify sample overlap and other confounding factors (such as phenotypic correlation and population stratification) between the four risky behaviors we are analysing here.
 
 ```{r heatmap_intercept_four_traits, echo=FALSE, warning=FALSE,fig.height=4.5}
+#C:/Users/k1894405/OneDrive - King's College London/Documents/GitHub/genomicPCA/data
 setwd(paste0(substring(getwd(), first = 1, last = 18),"Documents/GitHub/genomicPCA/data"))
 
 load("risk_taking_stand.RData")
@@ -312,7 +313,7 @@ heatmap<-
       coord_fixed()
 
 intercept <- heatmap+
-  geom_text(aes(Var1,Var2,label=value),color="black",size=4)+
+  geom_text(aes(Var1,Var2,label=corrected),color="black",size=4)+
   ggtitle("Intercepts (LDSC)")
 
 intercept
@@ -830,7 +831,7 @@ heatmap<-
   ggtitle("Intercepts (LDSC)")
 
 intercept <- heatmap+
-  geom_text(aes(Var1,Var2,label=value),color="black",size=4)
+  geom_text(aes(Var1,Var2,label=corrected),color="black",size=4)
 
 intercept
 
